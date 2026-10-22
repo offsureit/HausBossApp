@@ -1,0 +1,84 @@
+# Technician completes a job end-to-end: Accept → On My Way → At Job Site → Clock In → Complete.
+# Fixture: a pending job "Maestro Fixture" assigned to the technician, scheduled today (fixtures/reset.sql).
+appId: app.hausboss.mobile
+tags: [technician]
+env:
+  EMAIL: ${TECH_EMAIL}
+  PASSWORD: ${TECH_PASSWORD}
+---
+- runFlow: shared/login.yaml
+- extendedWaitUntil:
+    visible:
+      text: "Maestro Fixture"
+    timeout: 60000
+- extendedWaitUntil:
+    visible:
+      text: "Pending"
+    timeout: 15000
+- tapOn: "Accept"
+- extendedWaitUntil:
+    visible:
+      text: "Accepted"
+    timeout: 30000
+- tapOn: "On My Way"
+# First time: the explainer sheet; the OS permission is already granted (launchApp permissions).
+- runFlow:
+    when:
+      visible: "Share your location on jobs"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible:
+      text: "Confirm — I'm on my way"
+    timeout: 30000
+- tapOn: "Confirm — I'm on my way"
+- extendedWaitUntil:
+    visible:
+      text: "At Job Site"
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      text: "Sharing location|Location while open"
+    timeout: 15000
+- takeScreenshot: maestro-02-en-route
+- tapOn: "At Job Site"
+- extendedWaitUntil:
+    visible:
+      text: "Clock In"
+    timeout: 30000
+- tapOn: "Clock In"
+- extendedWaitUntil:
+    visible:
+      text: "Pre-Job photo"
+    timeout: 30000
+- tapOn: "Skip"
+- extendedWaitUntil:
+    visible:
+      text: "Complete"
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      text: "In Progress"
+    timeout: 15000
+- takeScreenshot: maestro-02-in-progress
+- tapOn: "Complete"
+- extendedWaitUntil:
+    visible:
+      text: "Post-Job photo"
+    timeout: 30000
+- tapOn: "Skip"
+- extendedWaitUntil:
+    visible:
+      text: "Completion notes"
+    timeout: 30000
+- tapOn:
+    id: "notes-input"
+- inputText: "Replaced the thermostat, tested heating."
+- hideKeyboard
+- tapOn: "Complete job"
+# Confetti, then the job moves to the Completed section of Today.
+- extendedWaitUntil:
+    visible:
+      text: "Open job for Maestro Fixture, completed"
+    timeout: 20000
+- takeScreenshot: maestro-02-completed

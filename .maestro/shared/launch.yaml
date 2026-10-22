@@ -1,0 +1,34 @@
+# Sub-flow: start the app from a clean state.
+# - Release / preview builds: launchApp clears the app data and pre-grants the permissions.
+# - Dev client (DEV_CLIENT_URL set, e.g. hausboss://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8083):
+#   run.sh already cleared the data and granted the permissions with adb; the app is opened through
+#   the dev-client deep link so it loads the Metro bundle instead of the launcher.
+appId: app.hausboss.mobile
+---
+- runFlow:
+    when:
+      true: ${!DEV_CLIENT_URL}
+    commands:
+      - launchApp:
+          clearState: true
+          permissions:
+            notifications: allow
+            location: allow
+            camera: allow
+- runFlow:
+    when:
+      true: ${!!DEV_CLIENT_URL}
+    commands:
+      - openLink: ${DEV_CLIENT_URL}
+      # First run after a data clear: the dev client's "developer menu" onboarding sheet.
+      - runFlow:
+          when:
+            visible: "This is the developer menu.*"
+          commands:
+            - tapOn: "Continue"
+      # …which leaves the dev menu itself open (Reload / Go home): close it.
+      - runFlow:
+          when:
+            visible: "Go home"
+          commands:
+            - tapOn: "Close"

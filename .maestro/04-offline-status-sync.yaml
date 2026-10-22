@@ -1,0 +1,47 @@
+# Offline status change syncs after reconnect: airplane mode → Accept (queued) → online → sent.
+# Fixture: pending job "Maestro Offline" assigned to the technician (fixtures/reset.sql). Android only
+# (iOS simulators have no airplane mode). run.sh checks the server row afterwards.
+appId: app.hausboss.mobile
+tags: [technician, offline]
+env:
+  EMAIL: ${TECH_EMAIL}
+  PASSWORD: ${TECH_PASSWORD}
+---
+- runFlow: shared/login.yaml
+- extendedWaitUntil:
+    visible:
+      text: "Maestro Offline"
+    timeout: 60000
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible:
+      text: "You are offline.*"
+    timeout: 20000
+# Open the job hub (from the cache) so the Accept targets exactly this job.
+- tapOn: "Maestro Offline"
+- extendedWaitUntil:
+    visible:
+      text: "Accept"
+    timeout: 10000
+- tapOn: "Accept"
+- extendedWaitUntil:
+    visible:
+      text: "Accepted"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible:
+      text: "You are offline — 1 change queued"
+    timeout: 10000
+- assertVisible: "Open job for Maestro Offline, accepted"
+- takeScreenshot: maestro-04-queued
+- setAirplaneMode: disabled
+# Reconnect → the queue replays ("Back online — 1 queued change sent" toast) and the banner goes away.
+- extendedWaitUntil:
+    notVisible:
+      text: "You are offline.*"
+    timeout: 30000
+- assertNotVisible: "queued change.*"
+- assertVisible: "Open job for Maestro Offline, accepted"
+- takeScreenshot: maestro-04-synced
+# run.sh then checks on the server that the job is `accepted`.

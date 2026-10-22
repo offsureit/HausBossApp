@@ -1,0 +1,168 @@
+{
+  "expo": {
+    "name": "HausBoss",
+    "slug": "hausboss",
+    "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "hausboss",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "app.hausboss.mobile",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "icon": {
+        "light": "./assets/images/icon.png",
+        "dark": "./assets/images/icon-dark.png",
+        "tinted": "./assets/images/icon-tinted.png"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "associatedDomains": [
+        "applinks:hausboss.app"
+      ],
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "app.hausboss.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0b1f4a",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "hausboss.app",
+              "pathPrefix": "/estimate/"
+            },
+            {
+              "scheme": "https",
+              "host": "hausboss.app",
+              "pathPrefix": "/accept-invite"
+            },
+            {
+              "scheme": "https",
+              "host": "hausboss.app",
+              "pathPrefix": "/reset-password"
+            },
+            {
+              "scheme": "https",
+              "host": "hausboss.app",
+              "pathPrefix": "/job/"
+            },
+            {
+              "scheme": "https",
+              "host": "hausboss.app",
+              "pathPrefix": "/messages/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#ffffff",
+            "image": "./assets/images/splash-icon.png"
+          },
+          "ios": {
+            "image": "./assets/images/splash-logo.png",
+            "imageWidth": 260,
+            "dark": {
+              "backgroundColor": "#ffffff",
+              "image": "./assets/images/splash-logo.png"
+            }
+          }
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to unlock the app with Face ID."
+        }
+      ],
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "HausBoss uses your location to record where job status changes and photos happen, and to show your truck to dispatch while you are on a job.",
+          "locationAlwaysAndWhenInUsePermission": "HausBoss reports your position every two minutes while you are on an active job so dispatch can see your truck.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HausBoss attaches photos and videos from your library to jobs.",
+          "cameraPermission": "HausBoss takes job photos and videos with the camera.",
+          "microphonePermission": "HausBoss records audio for job videos."
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#0b1f4a",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "HausBoss unlocks the app with Face ID."
+        }
+      ],
+      "expo-task-manager",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "# Room / WorkManager (expo-notifications, expo-task-manager): the *_Impl database classes are looked up by name.\n-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep @androidx.room.Entity class *\n-keep class androidx.work.impl.** { *; }\n-dontwarn androidx.room.paging.**"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

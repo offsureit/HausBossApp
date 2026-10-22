@@ -1,0 +1,45 @@
+# Login: wrong password shows the server's message; the right one lands the technician on Today.
+appId: app.hausboss.mobile
+tags: [smoke]
+env:
+  EMAIL: ${TECH_EMAIL}
+  PASSWORD: ${TECH_PASSWORD}
+---
+- runFlow: shared/launch.yaml
+- extendedWaitUntil:
+    visible:
+      text: "Sign in"
+    timeout: 60000
+- tapOn:
+    id: "login-email"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "login-password"
+- inputText: "wrong-password"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- extendedWaitUntil:
+    visible:
+      text: "Invalid email or password"
+    timeout: 15000
+- tapOn:
+    id: "login-password"
+- eraseText: 20
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
+- extendedWaitUntil:
+    visible:
+      text: "Next up"
+    timeout: 20000
+- assertVisible: "Today"
+- assertVisible: "Calendar"
+- assertNotVisible: "Dashboard"
+- takeScreenshot: maestro-01-login

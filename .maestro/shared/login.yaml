@@ -1,0 +1,23 @@
+# Sub-flow: clean state → signed in. Parameters: EMAIL, PASSWORD, DEV_CLIENT_URL (from the env, never in git).
+appId: app.hausboss.mobile
+---
+- runFlow: launch.yaml
+- extendedWaitUntil:
+    visible:
+      text: "Sign in"
+    timeout: 60000
+- tapOn:
+    id: "login-email"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "login-password"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+# First interactive sign-in offers the biometric lock once; decline so flows stay deterministic.
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"

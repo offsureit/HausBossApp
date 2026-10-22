@@ -1,0 +1,59 @@
+# Dispatcher reassigns a job from the employee sheet (Dashboard → employee roster → Reassign).
+# Fixture: three pending jobs for the technician; "Maestro Reassign" (the second) goes to the manager (fixtures/reset.sql).
+appId: app.hausboss.mobile
+tags: [dispatcher]
+env:
+  EMAIL: ${OWNER_EMAIL}
+  PASSWORD: ${OWNER_PASSWORD}
+---
+- runFlow: shared/login.yaml
+- extendedWaitUntil:
+    visible:
+      text: "Calendar"
+    timeout: 20000
+# Staff tabs: Dashboard instead of Today.
+- assertVisible: "Dashboard"
+- tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible:
+      text: "Employees"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${TECH_NAME}.*"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    text: "${TECH_NAME}.*"
+- extendedWaitUntil:
+    visible:
+      text: "Open jobs.*"
+    timeout: 10000
+- assertVisible: "Maestro Reassign"
+- takeScreenshot: maestro-03-employee-sheet
+# Open jobs are listed earliest first: Maestro Fixture, Maestro Reassign, Maestro Offline → index 1.
+- tapOn:
+    text: "Reassign"
+    index: 1
+- extendedWaitUntil:
+    visible:
+      text: "Reassign job"
+    timeout: 10000
+- tapOn:
+    text: "Assign to.*"
+- tapOn:
+    text: "${MANAGER_NAME} \\(Manager\\)"
+- extendedWaitUntil:
+    visible:
+      text: "Assign to: ${MANAGER_NAME}.*"
+    timeout: 5000
+- tapOn:
+    text: "Reassign"
+    index: 0
+# The sheet closes on success ("Reassigned to …" toast) and the roster counts move:
+# the technician loses one open job. run.sh then checks the server row points at the manager.
+- extendedWaitUntil:
+    visible:
+      text: "${TECH_NAME}: 2 open jobs"
+    timeout: 15000
+- takeScreenshot: maestro-03-reassigned
