@@ -1,0 +1,46 @@
+# file name | caption
+01-login|Sign in
+02-forgot-password|Forgot password
+03-today|Technician — Today (next job, also today, completed)
+04-calendar|Calendar — day view
+05-team-chat|Team chat — job threads (technician)
+06-customer-texts|Customer texts — inbox (technician)
+07-more|More — settings and tools
+08-notifications|Notifications
+09-search|Search — jobs, customers, texts
+10-job-details|Job hub — Details
+11-job-time|Job hub — Time tracking
+11-job-media|Job hub — Media (photos and videos)
+11-job-chat|Job hub — Chat
+11-job-activity|Job hub — Activity log
+11-job-estimates|Job hub — Estimates
+11-job-notes|Job hub — Notes
+12-location-explainer|Location sharing explainer (before the OS prompt)
+13-on-my-way-sheet|On My Way — ETA and customer text
+14-security|Security & permissions (app lock, location, push)
+15-offline-banner|Offline mode — queued changes banner
+16-today-dark|Today — dark mode
+17-job-dark|Job hub — dark mode
+20-calendar-owner|Dispatcher — Calendar
+21-dashboard|Dispatcher — Dashboard (KPIs, live map area)
+22-dashboard-roster|Dispatcher — Employee roster and upcoming jobs
+23-employee-sheet|Employee sheet — contact, last location, open jobs
+24-reassign-sheet|Reassign a job
+25-new-job|New job
+26-customers|Customers
+27-customer|Customer details
+28-new-customer|New customer
+29-estimate-editor|Estimate editor — line items and totals
+30-team-chat-owner|Team chat — all job threads (dispatcher)
+31-chat-thread|Team chat — thread
+32-customer-texts-owner|Customer texts — inbox (dispatcher)
+33-text-thread|Customer text — conversation
+34-settings-products|Settings — Products & services
+34-settings-inventory|Settings — Truck stock
+34-settings-categories|Settings — Job categories
+34-settings-team|Settings — Team
+34-settings-leads|Settings — Leads
+34-settings-billing|Settings — Billing
+35-public-estimate|Customer-facing estimate (link from the email/text)
+36-dashboard-dark|Dashboard — dark mode
+37-calendar-dark|Calendar — dark mode

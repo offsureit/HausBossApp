@@ -97,7 +97,7 @@ export async function startBackgroundTracking(): Promise<boolean> {
       pausesUpdatesAutomatically: false,
       showsBackgroundLocationIndicator: true,
       activityType: ActivityType.AutomotiveNavigation,
-      foregroundService: Platform.OS === 'android' ? { notificationTitle: 'HausBoss is sharing your location', notificationBody: 'Dispatch can see your truck while you are on a job.', notificationColor: brand.navy } : undefined,
+      foregroundService: Platform.OS === 'android' ? { notificationTitle: 'HausBaus is sharing your location', notificationBody: 'Dispatch can see your truck while you are on a job.', notificationColor: brand.navy } : undefined,
     });
     return true;
   } catch (err) {

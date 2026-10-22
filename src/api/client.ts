@@ -2,7 +2,7 @@ import { API_URL } from '~/lib/env';
 import { clearSession, getSession, isExpired, setRefresher, setSession, type Session } from './session';
 
 /**
- * HTTP client for the HausBoss API (`docs/API.md`) — a port of the web app's
+ * HTTP client for the HausBaus API (`docs/API.md`) — a port of the web app's
  * `src/api/client.ts` with the same guarantees:
  *
  * - JSON in/out, `Authorization: Bearer <access_token>` from the session store.

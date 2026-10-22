@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "HausBoss",
+    "name": "HausBaus",
     "slug": "hausboss",
     "version": "1.0.0",
     "runtimeVersion": {
@@ -118,8 +118,8 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "HausBoss uses your location to record where job status changes and photos happen, and to show your truck to dispatch while you are on a job.",
-          "locationAlwaysAndWhenInUsePermission": "HausBoss reports your position every two minutes while you are on an active job so dispatch can see your truck.",
+          "locationWhenInUsePermission": "HausBaus uses your location to record where job status changes and photos happen, and to show your truck to dispatch while you are on a job.",
+          "locationAlwaysAndWhenInUsePermission": "HausBaus reports your position every two minutes while you are on an active job so dispatch can see your truck.",
           "isAndroidBackgroundLocationEnabled": true,
           "isIosBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -128,9 +128,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "HausBoss attaches photos and videos from your library to jobs.",
-          "cameraPermission": "HausBoss takes job photos and videos with the camera.",
-          "microphonePermission": "HausBoss records audio for job videos."
+          "photosPermission": "HausBaus attaches photos and videos from your library to jobs.",
+          "cameraPermission": "HausBaus takes job photos and videos with the camera.",
+          "microphonePermission": "HausBaus records audio for job videos."
         }
       ],
       "@react-native-community/datetimepicker",
@@ -145,7 +145,7 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "HausBoss unlocks the app with Face ID."
+          "faceIDPermission": "HausBaus unlocks the app with Face ID."
         }
       ],
       "expo-task-manager",

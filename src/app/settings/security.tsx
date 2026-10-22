@@ -46,7 +46,7 @@ export default function SecurityScreen() {
   const bioLabel = lock.availability?.label ?? 'Biometrics';
   const BioIcon = bioLabel === 'Face ID' || bioLabel === 'Face unlock' ? ScanFace : Fingerprint;
   const pushText = push.status === 'registered' ? 'On — this phone receives job, chat and text alerts even when the app is closed.'
-    : push.status === 'denied' ? 'Notifications are turned off for HausBoss in your phone settings.'
+    : push.status === 'denied' ? 'Notifications are turned off for HausBaus in your phone settings.'
       : push.status === 'no-project' ? 'Not available in this build (no EAS project id). In-app alerts still work while the app is open.'
         : push.status === 'unsupported' ? 'Push needs a physical device.'
           : push.status === 'error' ? `Could not register: ${push.detail ?? 'unknown error'}`
@@ -54,7 +54,7 @@ export default function SecurityScreen() {
 
   return (
     <Screen scroll edges={['left', 'right', 'bottom']}>
-      <Section icon={BioIcon} title="App lock" description={lock.availability?.available ? `Require ${bioLabel} to open HausBoss (on launch and after 30 seconds in the background).` : 'Set up Face ID, fingerprint or a device passcode in your phone settings to use app lock.'}>
+      <Section icon={BioIcon} title="App lock" description={lock.availability?.available ? `Require ${bioLabel} to open HausBaus (on launch and after 30 seconds in the background).` : 'Set up Face ID, fingerprint or a device passcode in your phone settings to use app lock.'}>
         <View style={styles.row}>
           <Text variant="small" style={styles.grow}>Unlock with {bioLabel}</Text>
           <Toggle value={biometricLock} disabled={busy || !lock.availability?.available} onValueChange={(v) => void toggleLock(v)} accessibilityLabel="Biometric app lock" />

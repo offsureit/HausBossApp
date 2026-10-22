@@ -5,7 +5,7 @@ import { fail, fromApi, ok, type ServiceResult } from '@/services/types';
 import type { AppRole, Profile, UserProfileBundle } from '@/types';
 
 /**
- * Authentication against the HausBoss API (`/auth/*`, docs/API.md) — the mobile
+ * Authentication against the HausBaus API (`/auth/*`, docs/API.md) — the mobile
  * counterpart of the web `authService` with the same `{ data, error }` results.
  */
 

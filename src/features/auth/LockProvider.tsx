@@ -89,7 +89,7 @@ export function LockProvider({ children }: { children: ReactNode }) {
   const unlock = useCallback(async () => {
     if (prompting) return;
     setPrompting(true);
-    const result = await authenticate(`Unlock HausBoss`);
+    const result = await authenticate(`Unlock HausBaus`);
     setPrompting(false);
     if (result.ok) { haptics.success(); setLocked(false); setCovered(false); }
     else haptics.error();
@@ -123,7 +123,7 @@ export function LockProvider({ children }: { children: ReactNode }) {
         open={offer}
         onClose={() => setOffer(false)}
         title={`Unlock with ${label}?`}
-        description={`Next time, open HausBoss with ${label} instead of your password. You can change this under More → Security.`}
+        description={`Next time, open HausBaus with ${label} instead of your password. You can change this under More → Security.`}
         confirmLabel="Turn on"
         cancelLabel="Not now"
         onConfirm={async () => { const ok = await setEnabled(true); setOffer(false); if (ok) toast.success(`${label} unlock is on`); }}
