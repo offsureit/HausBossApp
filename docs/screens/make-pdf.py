@@ -27,7 +27,7 @@ d.rectangle([0, 0, A4[0], 900], fill=NAVY)
 d.text((200, 330), 'HausBaus', font=F(150, True), fill=WHITE)
 d.text((200, 520), 'Mobile app — first design, all screens', font=F(64), fill=(203, 213, 225))
 d.text((200, 1050), 'iOS + Android (Expo / React Native) on the existing HausBaus API', font=F(52), fill=NAVY)
-d.text((200, 1150), f'{len(items)} screens captured on an Android emulator with sample data · 22 Oct 2026', font=F(44), fill=GREY)
+d.text((200, 1150), '22 Oct 2026', font=F(44), fill=GREY)
 y = 1350
 d.text((200, y), 'Contents', font=F(56, True), fill=NAVY); y += 110
 for i, (_, cap, _) in enumerate(items, 1):
