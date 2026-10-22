@@ -38,7 +38,7 @@ PH = 2300  # phone height on page
 for i in range(0, len(items), 2):
     pg = Image.new('RGB', A4, WHITE); d = ImageDraw.Draw(pg)
     d.rectangle([0, 0, A4[0], 140], fill=NAVY)
-    d.text((120, 40), 'HausBaus mobile — screens', font=F(48, True), fill=WHITE)
+    d.text((120, 40), 'Mobile app — All screens', font=F(48, True), fill=WHITE)
     d.text((A4[0] - 420, 46), f'page {len(pages)}', font=F(40), fill=(203, 213, 225))
     for k, (name, cap, p) in enumerate(items[i:i + 2]):
         im = Image.open(p).convert('RGB')
@@ -47,7 +47,14 @@ for i in range(0, len(items), 2):
         # phone frame
         d.rounded_rectangle([x - 28, y - 28, x + w + 28, y + PH + 28], radius=90, fill=(15, 23, 41))
         pg.paste(im, (x, y))
-        d.text((x, y + PH + 70), f'{i + k + 1:02d}  {cap}', font=F(44, True), fill=NAVY)
+        # caption wrapped to the column so it never runs under the neighbouring screen
+        label = f'{i + k + 1:02d}  {cap}'; font = F(40, True); maxw = w + 40; lines = []; cur = ''
+        for word in label.split(' '):
+            trial = (cur + ' ' + word).strip()
+            if d.textlength(trial, font=font) <= maxw or not cur: cur = trial
+            else: lines.append(cur); cur = word
+        lines.append(cur)
+        for n, ln in enumerate(lines[:3]): d.text((x, y + PH + 70 + n * 52), ln, font=font, fill=NAVY)
         im.resize((540, int(540 * PH / w)), Image.LANCZOS).save(os.path.join(out_png, f'{name}.png'), optimize=True)
     pages.append(pg)
 
