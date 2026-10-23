@@ -4,7 +4,7 @@
  */
 const clean = (v: string | undefined) => (v ?? '').trim().replace(/\/$/, '');
 
-/** Base URL of the HausBaus server (no trailing slash). */
+/** Base URL of the HausBoss server (no trailing slash). */
 export const API_URL: string = clean(process.env.EXPO_PUBLIC_API_URL) || 'https://hausboss.app';
 
 /** Socket.IO origin; defaults to the API server. */

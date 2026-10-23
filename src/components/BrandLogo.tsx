@@ -20,7 +20,7 @@ const PANES = [[116, 138], [154, 138], [116, 176], [154, 176]] as const;
 export function HouseMark({ size = 48, primary = LOGO_NAVY, accent = LOGO_BLUE }: { size?: number; primary?: string; accent?: string }) {
   const height = (size * 252) / 304;
   return (
-    <Svg width={size} height={height} viewBox="0 0 304 252" accessibilityLabel="HausBaus">
+    <Svg width={size} height={height} viewBox="0 0 304 252" accessibilityLabel="HausBoss">
       <Path d={ROOF_AND_WALLS} fill={primary} />
       <Path d={RIGHT_WALL} fill={accent} />
       {PANES.map(([x, y]) => <Rect key={`${x}-${y}`} x={x} y={y} width={30} height={30} rx={4} fill={primary} />)}
@@ -29,7 +29,7 @@ export function HouseMark({ size = 48, primary = LOGO_NAVY, accent = LOGO_BLUE }
 }
 
 /**
- * The logo lock-up: the house mark and "hausbaus" in Inter (navy / brand blue), as on hausboss.app.
+ * The logo lock-up: the house mark and "hausboss" in Inter (navy / brand blue), as on hausboss.app.
  * On dark surfaces the navy parts turn white.
  */
 export function BrandLogo({ height = 56 }: { height?: number }) {
@@ -37,10 +37,10 @@ export function BrandLogo({ height = 56 }: { height?: number }) {
   const navy = scheme === 'dark' ? '#ffffff' : LOGO_NAVY;
   const fontSize = height * 0.62;
   return (
-    <View style={styles.row} accessible accessibilityRole="image" accessibilityLabel="HausBaus">
+    <View style={styles.row} accessible accessibilityRole="image" accessibilityLabel="HausBoss">
       <HouseMark size={height * 1.05} primary={navy} accent={LOGO_BLUE} />
       <Text style={[styles.word, { fontSize, lineHeight: height, color: navy }]}>
-        haus<Text style={[styles.word, { fontSize, lineHeight: height, color: LOGO_BLUE }]}>baus</Text>
+        haus<Text style={[styles.word, { fontSize, lineHeight: height, color: LOGO_BLUE }]}>boss</Text>
       </Text>
     </View>
   );

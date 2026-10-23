@@ -27,7 +27,7 @@ export async function biometricAvailability(): Promise<BiometricAvailability> {
 }
 
 /** Prompts; device PIN / passcode is allowed as the fallback. */
-export async function authenticate(promptMessage = 'Unlock HausBaus'): Promise<{ ok: boolean; reason?: string }> {
+export async function authenticate(promptMessage = 'Unlock HausBoss'): Promise<{ ok: boolean; reason?: string }> {
   try {
     const result = await LocalAuthentication.authenticateAsync({ promptMessage, cancelLabel: 'Cancel', disableDeviceFallback: false });
     if (result.success) return { ok: true };

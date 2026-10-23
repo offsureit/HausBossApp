@@ -61,7 +61,7 @@ export function LocationPermissionSheet({ open, onClose, onDone, current = 'unde
             </View>
           </View>
         ))}
-        {denied ? <Text variant="small" color="warning">Location is turned off for HausBaus. Allow it “all the time” in Settings to share your position on jobs.</Text> : null}
+        {denied ? <Text variant="small" color="warning">Location is turned off for HausBoss. Allow it “all the time” in Settings to share your position on jobs.</Text> : null}
       </View>
     </Sheet>
   );

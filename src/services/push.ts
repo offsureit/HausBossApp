@@ -39,7 +39,7 @@ export function projectId(): string | null {
 
 export async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL, { name: 'HausBaus', importance: AndroidImportance.MAX, vibrationPattern: [0, 250, 250, 250], lightColor: '#1a5cff' });
+  await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL, { name: 'HausBoss', importance: AndroidImportance.MAX, vibrationPattern: [0, 250, 250, 250], lightColor: '#1a5cff' });
 }
 
 export async function getPermission(): Promise<'granted' | 'denied' | 'undetermined'> {

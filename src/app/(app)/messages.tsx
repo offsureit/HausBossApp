@@ -25,7 +25,7 @@ export default function MessagesScreen() {
     return (
       <Screen scroll>
         <ScreenHeader title="Messages" />
-        <EmptyState icon={MessageCircle} title={NOT_IN_PLAN_TEXT.sms} message="Choose a package (Monthly, Annual or Lifetime) on the web to text customers from HausBaus." action={isAdmin ? <Button label="Billing" variant="outline" onPress={() => router.push('/settings/billing')} /> : undefined} />
+        <EmptyState icon={MessageCircle} title={NOT_IN_PLAN_TEXT.sms} message="Choose a package (Monthly, Annual or Lifetime) on the web to text customers from HausBoss." action={isAdmin ? <Button label="Billing" variant="outline" onPress={() => router.push('/settings/billing')} /> : undefined} />
       </Screen>
     );
   }
