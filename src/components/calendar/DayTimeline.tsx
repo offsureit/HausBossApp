@@ -5,7 +5,8 @@ import { format, isToday } from 'date-fns';
 import { AlertTriangle } from 'lucide-react-native';
 import { MINUTES_PER_DAY, arrivalWindow, layoutDay, minutesFromMidnight, type PositionedJob } from '@/components/calendarLayout';
 import { jobNumber } from '@/services/adapters/jobAdapter';
-import { isOverdue } from '@/utils/jobStatus';
+import { isOverdue, jobStatusLabel } from '@/utils/jobStatus';
+import { lateLabel, runningLate } from '@/utils/schedule';
 import type { Job } from '@/types';
 import { Text } from '~/components/ui';
 import { useTheme } from '~/theme/ThemeProvider';
@@ -68,14 +69,17 @@ export function DayTimeline({ day, jobs, colorFor, active }: DayTimelineProps) {
 
 function JobBlock({ p, color, onPress }: { p: PositionedJob; color: string; onPress: () => void }) {
   const { colors, scheme } = useTheme();
-  const overdue = isOverdue(p.job);
+  const lateSince = runningLate(p.job);
+  // Pending past its start, or the window ended before the technician arrived (same rule as the web).
+  const overdue = isOverdue(p.job) || !!lateSince;
+  const label = jobStatusLabel(p.job.status);
   const widthPct = 100 / p.columns;
   const status = statusColors[p.job.status];
   const height = Math.max(32, (p.endMinutes - p.startMinutes) * PX_PER_MINUTE - 2);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${p.job.clientName}, ${arrivalWindow(p.startMinutes, p.endMinutes - p.startMinutes)}, ${p.job.status}`}
+      accessibilityLabel={`${p.job.clientName}, ${label}${lateSince ? `, ${lateLabel(lateSince)}` : ''}, ${arrivalWindow(p.startMinutes, p.endMinutes - p.startMinutes)}`}
       onPress={onPress}
       style={[
         styles.block,
@@ -83,8 +87,10 @@ function JobBlock({ p, color, onPress }: { p: PositionedJob; color: string; onPr
       ]}
     >
       <Text variant="caption" style={styles.blockTitle} numberOfLines={height < 48 ? 1 : 2}>{p.job.clientName}</Text>
-      {height >= 48 ? <Text variant="caption" color="mutedForeground" numberOfLines={1}>{arrivalWindow(p.startMinutes, p.endMinutes - p.startMinutes)}</Text> : null}
-      {height >= 64 ? <Text variant="caption" color="mutedForeground" numberOfLines={1}>#{jobNumber(p.job.id)} · {p.job.assignedTo || 'Unassigned'}</Text> : null}
+      {/* What the technician is doing now (On My Way, At Job Site…), plus Late when the window has passed. */}
+      <Text variant="caption" style={styles.blockStatus} numberOfLines={1}>{label}{lateSince ? <Text variant="caption" color="destructive" style={styles.blockStatus}> · Late</Text> : null}</Text>
+      {height >= 64 ? <Text variant="caption" color="mutedForeground" numberOfLines={1}>{arrivalWindow(p.startMinutes, p.endMinutes - p.startMinutes)}</Text> : null}
+      {height >= 80 ? <Text variant="caption" color="mutedForeground" numberOfLines={1}>#{jobNumber(p.job.id)} · {p.job.assignedTo || 'Unassigned'}</Text> : null}
       {overdue ? <AlertTriangle size={12} color={colors.destructive} style={styles.overdue} /> : null}
     </Pressable>
   );
@@ -100,5 +106,6 @@ const styles = StyleSheet.create({
   nowDot: { position: 'absolute', left: -4, top: -5, width: 8, height: 8, borderRadius: 4 },
   block: { position: 'absolute', borderRadius: radius.sm, borderWidth: StyleSheet.hairlineWidth, borderLeftWidth: 4, paddingHorizontal: 6, paddingVertical: 3, marginHorizontal: 2, overflow: 'hidden' },
   blockTitle: { fontFamily: 'Inter_600SemiBold' },
+  blockStatus: { fontFamily: 'Inter_500Medium' },
   overdue: { position: 'absolute', right: 4, top: 4 },
 });

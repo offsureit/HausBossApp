@@ -20,3 +20,24 @@ export function scheduleWindow(iso: string, minutes?: number | null): string {
   const end = new Date(start.getTime() + (minutes && minutes > 0 ? minutes : ARRIVAL_WINDOW_HOURS * 60) * 60 * 1000);
   return `${format(start, 'EEE, MMM d')} · ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`;
 }
+
+/** Statuses where the technician has not reached the customer yet. */
+const NOT_ARRIVED = new Set(['pending', 'accepted', 'en-route']);
+
+/**
+ * The arrival window has ended and the technician has not arrived (pending, accepted or on the way):
+ * the customer is waiting. Returns when the window ended, or null when the job is on time.
+ */
+export function runningLate(job: { status: string; scheduledDate?: string | null; durationMinutes?: number | null }, now: Date = new Date()): Date | null {
+  if (!NOT_ARRIVED.has(job.status) || !job.scheduledDate) return null;
+  const start = new Date(job.scheduledDate).getTime();
+  if (Number.isNaN(start)) return null;
+  const end = start + (job.durationMinutes && job.durationMinutes > 0 ? job.durationMinutes : ARRIVAL_WINDOW_HOURS * 60) * 60_000;
+  return end < now.getTime() ? new Date(end) : null;
+}
+
+/** "Late · window ended 3:00 PM" (adds the day when it ended on an earlier day). */
+export function lateLabel(windowEnd: Date, now: Date = new Date()): string {
+  const sameDay = windowEnd.toDateString() === now.toDateString();
+  return `Late · window ended ${format(windowEnd, sameDay ? 'h:mm a' : 'EEE h:mm a')}`;
+}

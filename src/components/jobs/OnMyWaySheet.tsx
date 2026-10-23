@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MapPin, Navigation } from 'lucide-react-native';
 import { TruckProgress } from '~/components/motion/TruckProgress';
-import { locationsService, type TravelEstimate } from '~/services/locations';
+import { formatEta, locationsService, type TravelEstimate } from '~/services/locations';
 import { Button, Sheet, Text } from '~/components/ui';
 import { haptics } from '~/lib/haptics';
 import { links } from '~/lib/links';
@@ -19,7 +19,7 @@ export interface OnMyWaySheetProps {
   busy?: boolean;
 }
 
-/** "On my way": distance + ETA to the job, then the status change (the server texts the customer) and the truck animation. */
+/** "On my way": driving distance + ETA to the job, then the status change (the server texts the customer) and the truck animation. */
 export function OnMyWaySheet({ open, job, onClose, onConfirm, busy = false }: OnMyWaySheetProps) {
   const { colors } = useTheme();
   const [estimate, setEstimate] = useState<TravelEstimate | null>(null);
@@ -65,14 +65,17 @@ export function OnMyWaySheet({ open, job, onClose, onConfirm, busy = false }: On
       {sent ? <TruckProgress onDone={finish} /> : (
         <View style={[styles.estimate, { backgroundColor: colors.muted }]} accessibilityLiveRegion="polite">
           {loading ? (
-            <Text variant="small" color="mutedForeground">Calculating distance…</Text>
+            <Text variant="small" color="mutedForeground">Calculating driving time…</Text>
           ) : estimate && miles != null ? (
             <>
-              <Text variant="body"><Text variant="bodyMedium">{miles.toFixed(1)} mi</Text> · about <Text variant="bodyMedium">{estimate.etaMinutes} min</Text></Text>
-              <Text variant="caption" color="mutedForeground">Straight-line estimate — driving time may be longer.</Text>
+              <Text variant="body"><Text variant="bodyMedium">{miles.toFixed(1)} mi</Text> · about <Text variant="bodyMedium">{formatEta(estimate.etaMinutes)}</Text> driving</Text>
+              <Text variant="caption" color="mutedForeground">{estimate.source === 'google' ? 'By road, with current traffic.' : 'By road.'}</Text>
             </>
           ) : (
-            <Text variant="small" color="mutedForeground">Distance unavailable (location permission or geocoding failed).</Text>
+            <Text variant="small" color="mutedForeground">
+              Driving time unavailable (location is off or the address could not be found).{' '}
+              <Text variant="small" color="accent" accessibilityRole="link" onPress={() => void links.navigate(job.clientAddress)}>Open directions</Text>
+            </Text>
           )}
         </View>
       )}

@@ -192,35 +192,36 @@ export async function reverseGeocode(point: LatLng): Promise<string | null> {
   }
 }
 
-const EARTH_RADIUS_KM = 6371;
-/** Straight-line distance (km). */
-export function haversineKm(a: LatLng, b: LatLng): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.latitude - a.latitude);
-  const dLon = toRad(b.longitude - a.longitude);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+/** Driving distance / time on real roads (server: Google Routes, then OpenStreetMap). Never a straight line. */
+export interface TravelEstimate { distanceKm: number; etaMinutes: number; source: 'google' | 'osrm' }
+
+/** "25 min", "1 h 5 min" (same as the web). */
+export function formatEta(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
 }
 
-/** Straight-line ETA at a conservative 40 km/h urban average, +20 % for road routing (same as the web fallback). */
-export function straightLineEta(distanceKm: number): number {
-  return Math.max(1, Math.round((distanceKm * 1.2 * 60) / 40));
-}
-
-export interface TravelEstimate { distanceKm: number; etaMinutes: number; source: 'straight-line' }
-
-/** Distance from the device to a job address. Mobile has no Routes API key, so this is straight-line and labelled as such. */
+/**
+ * Driving distance and time from the device to a job address (`POST /travel/estimate`, same as the web).
+ * The native geocoder's point is sent along when it has one, saving the server a lookup. Null when the
+ * location is off, the request fails or no road route exists — the sheet then offers directions instead.
+ */
 export async function estimateTravel(address: string): Promise<TravelEstimate | null> {
   let origin: LatLng;
   try { origin = await getCurrentPosition({ highAccuracy: true }); } catch { return null; }
-  const dest = await geocodeAddress(address);
-  if (!dest) return null;
-  const km = haversineKm(origin, dest);
-  return { distanceKm: km, etaMinutes: straightLineEta(km), source: 'straight-line' };
+  const destination = await geocodeAddress(address);
+  try {
+    const res = await api.post<{ estimate: TravelEstimate | null }>('/travel/estimate', { origin: { latitude: origin.latitude, longitude: origin.longitude }, address, destination: destination ? { latitude: destination.latitude, longitude: destination.longitude } : null });
+    return res?.estimate ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export const locationsService = {
   ensureForegroundPermission, getCurrentPosition, getPositionOrLastKnown, captureGps, upsertOwnLocation, captureAndUpsertOwnLocation, listCompanyLocations,
-  subscribe, listenForPingRequests, requestPing, presenceChannelName, geocodeAddress, reverseGeocode, haversineKm, straightLineEta, estimateTravel,
+  subscribe, listenForPingRequests, requestPing, presenceChannelName, geocodeAddress, reverseGeocode, estimateTravel,
   LOCATION_PING_EVENT, LOCATION_PING_TIMEOUT_MS,
 };
