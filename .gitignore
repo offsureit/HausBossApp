@@ -44,3 +44,5 @@ example
 play-service-account.json
 .maestro/.env.local
 .maestro/output/
+
+.claude/settings.local.json

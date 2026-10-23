@@ -16,9 +16,11 @@ export function EmptyState({ icon: Icon, title, message, action, tone = 'muted' 
   const { colors } = useTheme();
   const color = tone === 'accent' ? colors.accent : colors.mutedForeground;
   return (
-    <View style={[styles.wrap, { borderColor: colors.border }]} accessible accessibilityLabel={`${title}. ${message ?? ''}`}>
-      <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.12) }]}>
-        <Icon size={28} color={color} />
+    <View style={[styles.wrap, { backgroundColor: colors.card, borderColor: withAlpha(colors.border, 0.7) }]} accessible accessibilityLabel={`${title}. ${message ?? ''}`}>
+      <View style={[styles.ring, { backgroundColor: withAlpha(color, 0.06) }]}>
+        <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.14) }]}>
+          <Icon size={28} color={color} />
+        </View>
       </View>
       <Text variant="heading" align="center">{title}</Text>
       {message ? <Text variant="small" color="mutedForeground" align="center">{message}</Text> : null}
@@ -28,7 +30,8 @@ export function EmptyState({ icon: Icon, title, message, action, tone = 'muted' 
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: spacing[2], padding: spacing[6], borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderStyle: 'dashed' },
-  iconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: spacing[1] },
+  wrap: { alignItems: 'center', gap: spacing[2], paddingVertical: spacing[8], paddingHorizontal: spacing[6], borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth },
+  ring: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: spacing[2] },
+  iconWrap: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
   action: { marginTop: spacing[2] },
 });

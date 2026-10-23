@@ -7,7 +7,8 @@ import { radius, touchTarget, withAlpha } from '~/theme/tokens';
 export interface IconButtonProps extends Omit<PressableScaleProps, 'children' | 'style'> {
   icon: ComponentType<{ size?: number; color?: string }>;
   label: string;
-  variant?: 'ghost' | 'outline' | 'filled';
+  /** `solid`: a filled round button in the tone colour with a white icon (send, primary actions). */
+  variant?: 'ghost' | 'outline' | 'filled' | 'solid';
   tone?: 'default' | 'accent' | 'destructive';
   size?: number;
   style?: StyleProp<ViewStyle>;
@@ -29,11 +30,12 @@ export function IconButton({ icon: Icon, label, variant = 'ghost', tone = 'defau
         { width: size, height: size, borderRadius: radius.md },
         variant === 'outline' && { borderWidth: StyleSheet.hairlineWidth * 2, borderColor: colors.border },
         variant === 'filled' && { backgroundColor: withAlpha(color, 0.12) },
+        variant === 'solid' && { backgroundColor: color, borderRadius: size / 2 },
         disabled && { opacity: 0.5 },
         style,
       ]}
     >
-      <Icon size={Math.round(size * 0.45)} color={color} />
+      <Icon size={Math.round(size * 0.45)} color={variant === 'solid' ? (tone === 'destructive' ? colors.destructiveForeground : colors.accentForeground) : color} />
     </PressableScale>
   );
 }

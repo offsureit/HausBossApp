@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 import { EMAIL_TYPES, PHONE_TYPES, SALUTATIONS, type JobFormValues } from '@/components/jobForm/schema';
 import type { BusinessUnit, Division, DivisionSettings } from '@/types';
-import { Card, Select, Text, TextField, Toggle } from '~/components/ui';
+import { Phone, Receipt, UserRound } from 'lucide-react-native';
+import { SectionCard, Select, TextField, Toggle } from '~/components/ui';
+import { useTheme } from '~/theme/ThemeProvider';
 import { spacing } from '~/theme/tokens';
 
 const NONE = 'none';
@@ -27,8 +29,10 @@ export function CustomerFields({ values, errors, set, units = [], divisions = []
   const hasDivisions = divisions.some((d) => d.legalName || d.telnyxNumber);
   const pickUnit = (id: string) => { const u = units.find((x) => x.id === id); set('businessUnitId', id); if (u?.division) set('division', u.division); };
   const pickDivision = (d: '' | Division) => { const current = units.find((u) => u.id === values.businessUnitId); if (current?.division && current.division !== d) set('businessUnitId', ''); set('division', d); };
+  const { colors } = useTheme();
   return (
     <>
+      <SectionCard title="Customer" icon={UserRound}>
       <TextField label="Company name" value={values.clientCompanyName} onChangeText={(v) => set('clientCompanyName', v)} placeholder="Leave empty for a private customer" error={errors.clientCompanyName} hint="Enter a company name, a first and last name, or both." />
       {units.length > 0 ? <Select label="Business unit" value={values.businessUnitId || NONE} onChange={(v) => pickUnit(v === NONE ? '' : v)} options={[{ value: NONE, label: 'None' }, ...units.map((u) => ({ value: u.id, label: u.name }))]} /> : null}
       {units.length > 0 || hasDivisions ? <Select label="Division" value={values.division || NONE} onChange={(v) => pickDivision(v === NONE ? '' : (v as Division))} options={DIVISIONS.map((d) => ({ value: d.value || NONE, label: d.label }))} /> : null}
@@ -37,6 +41,8 @@ export function CustomerFields({ values, errors, set, units = [], divisions = []
         <View style={styles.grow}><TextField label="First name" value={values.clientFirstName} onChangeText={(v) => set('clientFirstName', v)} autoComplete="given-name" error={errors.clientFirstName} /></View>
       </View>
       <TextField label="Last name" value={values.clientLastName} onChangeText={(v) => set('clientLastName', v)} autoComplete="family-name" error={errors.clientLastName} />
+      </SectionCard>
+      <SectionCard title="Contact" icon={Phone} color={colors.success}>
       <TextField label="Service address *" value={values.clientAddress} onChangeText={(v) => set('clientAddress', v)} autoComplete="street-address" error={errors.clientAddress} multiline />
       <View style={styles.row}>
         <View style={styles.grow}><TextField label="Phone *" value={values.clientPhone} onChangeText={(v) => set('clientPhone', v)} keyboardType="phone-pad" autoComplete="tel" error={errors.clientPhone} /></View>
@@ -54,10 +60,8 @@ export function CustomerFields({ values, errors, set, units = [], divisions = []
         <View style={styles.grow}><TextField label="Second email" value={values.clientEmail2} onChangeText={(v) => set('clientEmail2', v)} keyboardType="email-address" autoCapitalize="none" error={errors.clientEmail2} /></View>
         {showTypes ? <View style={styles.narrow}><Select label="Type" value={values.clientEmail2Type} onChange={(v) => set('clientEmail2Type', v)} options={EMAIL_TYPES.map((t) => ({ value: t, label: t }))} /></View> : null}
       </View>
-      <Card style={styles.rowBetween}>
-        <Text variant="small" style={styles.grow}>Billing contact differs from customer</Text>
-        <Toggle value={values.billingDiffers} onValueChange={(v) => set('billingDiffers', v)} accessibilityLabel="Billing contact differs from customer" />
-      </Card>
+      </SectionCard>
+      <SectionCard title="Billing" subtitle={values.billingDiffers ? 'Separate billing contact' : 'Same as the customer'} icon={Receipt} color={colors.warning} action={<Toggle value={values.billingDiffers} onValueChange={(v) => set('billingDiffers', v)} accessibilityLabel="Billing contact differs from customer" />}>
       {values.billingDiffers ? (
         <>
           <TextField label="Billing company name" value={values.billingCompanyName} onChangeText={(v) => set('billingCompanyName', v)} placeholder="Leave empty to bill a person" />
@@ -70,13 +74,13 @@ export function CustomerFields({ values, errors, set, units = [], divisions = []
           <TextField label="Billing email" value={values.billingEmail} onChangeText={(v) => set('billingEmail', v)} keyboardType="email-address" autoCapitalize="none" error={errors.billingEmail} />
         </>
       ) : null}
+      </SectionCard>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing[2], alignItems: 'flex-start' },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing[2] },
   grow: { flex: 1, minWidth: 0 },
-  narrow: { width: 112 },
+  narrow: { width: 132 },
 });

@@ -8,7 +8,7 @@ import { snapToSlot } from '@/components/calendarLayout';
 import { getContractorColor } from '@/utils/contractorColors';
 import { assignableEmployees, employeeOptionLabel } from '@/utils/employees';
 import type { CustomerRequest, Job } from '@/types';
-import { Button, Card, DateTimeField, Dialog, EmptyState, Screen, SegmentedControl, Select, Sheet, SkeletonCard, Text, TextField } from '~/components/ui';
+import { Avatar, Button, Card, DateTimeField, Dialog, EmptyState, Screen, SegmentedControl, Select, Sheet, SkeletonCard, Text, TextField } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useJobActions } from '~/features/jobs/useJobActions';
@@ -20,7 +20,7 @@ import { links } from '~/lib/links';
 import { jobsService } from '~/services/jobs';
 import { leadsService } from '~/services/leads';
 import { useTheme } from '~/theme/ThemeProvider';
-import { spacing } from '~/theme/tokens';
+import { spacing, withAlpha } from '~/theme/tokens';
 
 type Filter = 'pending' | 'all';
 const NONE = 'none';
@@ -89,15 +89,19 @@ export default function LeadsScreen() {
           <View style={styles.list}>
             {leads.map((l) => (
               <Card key={l.id} style={styles.card}>
-                <View style={styles.head}><Text variant="heading" style={styles.grow}>{l.client_name}</Text><Text variant="caption" color={l.status === 'pending' ? 'warningForeground' : l.status === 'scheduled' ? 'success' : 'mutedForeground'}>{l.status}</Text></View>
+                <View style={styles.head}>
+                  <Avatar name={l.client_name} size={44} />
+                  <View style={styles.grow}><Text variant="heading">{l.client_name}</Text><Text variant="caption" color="mutedForeground">Received {format(new Date(l.created_at), 'MMM d, h:mm a')}</Text></View>
+                  {(() => { const tone = l.status === 'pending' ? colors.warning : l.status === 'scheduled' ? colors.success : colors.mutedForeground; return <View style={[styles.status, { backgroundColor: withAlpha(tone, 0.12) }]}><Text variant="caption" color={tone} style={styles.strong}>{l.status.charAt(0).toUpperCase() + l.status.slice(1)}</Text></View>; })()}
+                </View>
                 <Text variant="body">{l.job_details}</Text>
                 <View style={styles.meta}><MapPin size={14} color={colors.mutedForeground} /><Text variant="caption" color="mutedForeground" style={styles.grow}>{l.client_address}</Text></View>
                 <View style={styles.meta}><Phone size={14} color={colors.mutedForeground} /><Text variant="caption" color="accent" onPress={() => void links.call(l.client_phone)}>{l.client_phone}</Text>{l.client_email ? <><Mail size={14} color={colors.mutedForeground} /><Text variant="caption" color="accent" onPress={() => void links.email(l.client_email as string)}>{l.client_email}</Text></> : null}</View>
-                <Text variant="caption" color="mutedForeground">Received {format(new Date(l.created_at), 'MMM d, h:mm a')}{l.preferred_date ? ` · prefers ${l.preferred_date.slice(0, 10)}` : ''}{l.source ? ` · ${l.source}` : ''}</Text>
+                {l.preferred_date || l.source ? <Text variant="caption" color="mutedForeground">{[l.preferred_date ? `Prefers ${l.preferred_date.slice(0, 10)}` : null, l.source ? `Source: ${l.source}` : null].filter(Boolean).join(' · ')}</Text> : null}
                 {l.status === 'pending' ? (
                   <View style={styles.actions}>
-                    <Button label="Schedule" size="sm" icon={<CalendarPlus size={14} color={colors.accentForeground} />} onPress={() => openSchedule(l)} />
-                    <Button label="Reject" size="sm" variant="outline" icon={<XCircle size={14} color={colors.foreground} />} onPress={() => setRejecting(l)} />
+                    <Button label="Reject" variant="outline" style={styles.grow} icon={<XCircle size={16} color={colors.foreground} />} onPress={() => setRejecting(l)} />
+                    <Button label="Schedule" style={styles.grow} icon={<CalendarPlus size={16} color={colors.accentForeground} />} onPress={() => openSchedule(l)} />
                   </View>
                 ) : null}
               </Card>
@@ -119,10 +123,12 @@ export default function LeadsScreen() {
 }
 
 const styles = StyleSheet.create({
+  status: { borderRadius: 999, paddingHorizontal: spacing[2], paddingVertical: 3 },
+  strong: { fontFamily: 'Inter_600SemiBold' },
   content: { gap: spacing[3] },
   list: { gap: spacing[3] },
   card: { gap: spacing[2] },
-  head: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  head: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   meta: { flexDirection: 'row', alignItems: 'center', gap: spacing[1], flexWrap: 'wrap' },
   grow: { flex: 1, minWidth: 0 },
   actions: { flexDirection: 'row', gap: spacing[2], paddingTop: spacing[1] },

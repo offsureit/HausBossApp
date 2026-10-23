@@ -33,13 +33,15 @@ export interface ThemeColors {
   ring: string;
   /** Translucent overlay behind sheets and dialogs. */
   overlay: string;
+  /** Filled form-field surface (text fields, dropdowns, date pickers). */
+  field: string;
   /** Skeleton base + highlight. */
   skeleton: string;
   skeletonHighlight: string;
 }
 
 export const lightColors: ThemeColors = {
-  background: '#f8fafc',
+  background: '#f3f6fb',
   foreground: '#0f1729',
   card: '#ffffff',
   cardForeground: '#0f1729',
@@ -53,7 +55,7 @@ export const lightColors: ThemeColors = {
   accentForeground: '#ffffff',
   // Semantic colours are one step darker than the web's so white text on them and the colour as
   // text on the page both pass WCAG AA (4.5:1) — checked by theme/__tests__/contrast.test.ts.
-  destructive: '#dc2626',
+  destructive: '#c92a2a',
   destructiveForeground: '#ffffff',
   success: '#15803d',
   successForeground: '#ffffff',
@@ -63,6 +65,7 @@ export const lightColors: ThemeColors = {
   input: '#d7dfea',
   ring: '#1a5cff',
   overlay: 'rgba(15, 23, 41, 0.45)',
+  field: '#f6f8fc',
   skeleton: '#e6ecf3',
   skeletonHighlight: '#f4f7fb',
 };
@@ -92,6 +95,7 @@ export const darkColors: ThemeColors = {
   input: '#222f44',
   ring: '#3370ff',
   overlay: 'rgba(0, 0, 0, 0.6)',
+  field: '#131b2d',
   skeleton: '#1b2538',
   skeletonHighlight: '#26324a',
 };
@@ -119,8 +123,20 @@ export const statusBadge: Record<JobStatus, { light: { bg: string; fg: string; b
 export const spacing = { 0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 } as const;
 export type SpacingKey = keyof typeof spacing;
 
-/** `--radius: 0.5rem` on the web. */
-export const radius = { sm: 6, md: 8, lg: 12, xl: 16, full: 999 } as const;
+/** Rounder than the web's 0.5rem for a native feel: controls 12, cards 18, hero / sheets 28. */
+export const radius = { sm: 8, md: 12, lg: 18, xl: 22, xxl: 28, full: 999 } as const;
+
+/** The brand gradient (navy → brand blue) behind hero headers. */
+export const gradients = {
+  hero: { light: ['#0b1f4a', '#15378f', '#1a5cff'], dark: ['#081129', '#10286a', '#2452d6'] },
+} as const;
+
+/** Soft, layered elevation (iOS shadow + Android elevation). Dark mode relies on borders instead. */
+export function elevation(level: 1 | 2 | 3, scheme: 'light' | 'dark', color = '#0b1f4a') {
+  if (scheme === 'dark') return { shadowOpacity: 0, elevation: 0 };
+  const spec = { 1: { y: 2, r: 8, o: 0.06, e: 2 }, 2: { y: 6, r: 18, o: 0.08, e: 4 }, 3: { y: 12, r: 28, o: 0.12, e: 8 } }[level];
+  return { shadowColor: color, shadowOffset: { width: 0, height: spec.y }, shadowRadius: spec.r, shadowOpacity: spec.o, elevation: spec.e };
+}
 
 export const fontFamily = {
   regular: 'Inter_400Regular',
@@ -130,9 +146,9 @@ export const fontFamily = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 32, lineHeight: 38, fontFamily: fontFamily.bold },
-  title: { fontSize: 22, lineHeight: 28, fontFamily: fontFamily.semibold },
-  heading: { fontSize: 18, lineHeight: 24, fontFamily: fontFamily.semibold },
+  display: { fontSize: 30, lineHeight: 36, fontFamily: fontFamily.bold, letterSpacing: -0.6 },
+  title: { fontSize: 22, lineHeight: 28, fontFamily: fontFamily.bold, letterSpacing: -0.3 },
+  heading: { fontSize: 17, lineHeight: 23, fontFamily: fontFamily.semibold, letterSpacing: -0.2 },
   body: { fontSize: 16, lineHeight: 22, fontFamily: fontFamily.regular },
   bodyMedium: { fontSize: 16, lineHeight: 22, fontFamily: fontFamily.medium },
   label: { fontSize: 14, lineHeight: 20, fontFamily: fontFamily.medium },
@@ -152,4 +168,17 @@ export function withAlpha(hex: string, alpha: number): string {
   if (!m) return hex;
   const n = parseInt(m[1], 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+/**
+ * Surface of a form field: filled with a soft border at rest, card-white with an accent border and a
+ * soft accent glow while focused, red when invalid. Shared by TextField, Select and DateTimeField.
+ */
+export function fieldSurface(colors: ThemeColors, _scheme: 'light' | 'dark', state: { focused?: boolean; error?: boolean; disabled?: boolean } = {}) {
+  const border = state.error ? colors.destructive : state.focused ? colors.accent : colors.border;
+  return {
+    backgroundColor: state.disabled ? colors.muted : state.focused ? colors.card : colors.field,
+    borderColor: border,
+    borderWidth: state.focused || state.error ? 1.5 : 1,
+  };
 }

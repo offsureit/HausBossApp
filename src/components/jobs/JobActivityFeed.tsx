@@ -4,7 +4,7 @@ import { timeAgo } from '~/lib/time';
 import { Activity, ArrowRightLeft, CalendarClock, FileText, Image as ImageIcon, Mail, MessageSquareText, PlusCircle, Send, UserCheck } from 'lucide-react-native';
 import { jobStatusLabel } from '@/utils/jobStatus';
 import type { ActivityLog, Employee } from '@/types';
-import { EmptyState, Skeleton, Text } from '~/components/ui';
+import { EmptyState, SectionCard, Skeleton, Text, Timeline } from '~/components/ui';
 import { useJobActivity } from '~/features/jobs/useJobActivity';
 import { useTheme } from '~/theme/ThemeProvider';
 import { spacing } from '~/theme/tokens';
@@ -40,27 +40,37 @@ export function JobActivityFeed({ jobId, employees }: { jobId: string; employees
   if (logs.length === 0) return <EmptyState icon={Activity} title="No activity recorded yet" message={error ?? undefined} />;
 
   return (
-    <View style={[styles.list, styles.timeline, { borderLeftColor: colors.border }]} accessibilityRole="list">
-      {logs.map((log) => {
-        const Icon = iconFor(log.activity_type);
+    <SectionCard title="Activity" subtitle={`${logs.length} event${logs.length === 1 ? '' : 's'}`} icon={Activity}>
+      <Timeline items={logs.map((log) => {
         const actor = names.get(log.user_id) ?? `User ${log.user_id.slice(0, 8)}`;
         const diffs = log.activity_type === 'created' ? [] : diffRows(log);
-        return (
-          <View key={log.id} style={styles.item}>
-            <View style={[styles.icon, { backgroundColor: colors.card, borderColor: colors.border }]}><Icon size={12} color={colors.foreground} /></View>
-            <Text variant="small">{log.description}</Text>
-            {diffs.map((d) => <Text key={d.key} variant="caption" color="mutedForeground">{d.key}: {d.from} → {d.to}</Text>)}
-            <Text variant="caption" color="mutedForeground">{actor} · {timeAgo(log.created_at)}</Text>
-          </View>
-        );
-      })}
-    </View>
+        return {
+          key: log.id,
+          icon: iconFor(log.activity_type),
+          color: colorFor(log.activity_type, colors),
+          title: (
+            <View style={styles.item}>
+              <Text variant="small" style={styles.strong}>{log.description}</Text>
+              {diffs.map((d) => <Text key={d.key} variant="caption" color="mutedForeground">{d.key}: {d.from} → <Text variant="caption" color="foreground">{d.to}</Text></Text>)}
+            </View>
+          ),
+          meta: `${actor} · ${timeAgo(log.created_at)}`,
+        };
+      })} />
+    </SectionCard>
   );
+}
+
+/** Timeline dot colour per kind of event. */
+function colorFor(type: string, colors: { accent: string; success: string; warning: string; mutedForeground: string }): string {
+  if (type === 'created' || type === 'status_change') return colors.accent;
+  if (type === 'assignment_change' || type === 'schedule_change') return colors.warning;
+  if (type.startsWith('estimate') || type === 'sms_sent' || type === 'email_sent') return colors.success;
+  return colors.mutedForeground;
 }
 
 const styles = StyleSheet.create({
   list: { gap: spacing[3] },
-  timeline: { borderLeftWidth: StyleSheet.hairlineWidth, marginLeft: 10, paddingLeft: spacing[4] },
   item: { gap: 2 },
-  icon: { position: 'absolute', left: -(spacing[4] + 11), top: 0, width: 22, height: 22, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  strong: { fontFamily: 'Inter_600SemiBold' },
 });

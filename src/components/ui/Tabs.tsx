@@ -5,7 +5,7 @@ import { Text } from './Text';
 import { haptics } from '~/lib/haptics';
 import { useMotion } from '~/motion';
 import { useTheme } from '~/theme/ThemeProvider';
-import { spacing } from '~/theme/tokens';
+import { radius, spacing } from '~/theme/tokens';
 
 export interface TabItem<T extends string> { value: T; label: string; icon?: ComponentType<{ size?: number; color?: string }>; badge?: number }
 
@@ -25,8 +25,10 @@ export function Tabs<T extends string>({ value, items, onChange }: { value: T; i
   const underline = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() }], width: w.get() }));
 
   return (
-    <View style={[styles.wrap, { borderBottomColor: colors.border }]}>
+    <View style={styles.wrap}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row} accessibilityRole="tablist">
+        {/* The active tab sits on a solid accent pill that slides between tabs. */}
+        <Animated.View pointerEvents="none" style={[styles.pill, { backgroundColor: colors.accent }, underline]} />
         {items.map((item) => {
           const active = item.value === value;
           const Icon = item.icon;
@@ -39,22 +41,22 @@ export function Tabs<T extends string>({ value, items, onChange }: { value: T; i
               onPress={() => { if (!active) { haptics.selection(); onChange(item.value); } }}
               style={styles.tab}
             >
-              {Icon ? <Icon size={16} color={active ? colors.accent : colors.mutedForeground} /> : null}
-              <Text variant="label" color={active ? 'accent' : 'mutedForeground'}>{item.label}</Text>
-              {item.badge ? <View style={[styles.badge, { backgroundColor: colors.accent }]}><Text variant="caption" color="accentForeground">{item.badge > 99 ? '99+' : item.badge}</Text></View> : null}
+              {Icon ? <Icon size={16} color={active ? colors.accentForeground : colors.mutedForeground} /> : null}
+              <Text variant="label" color={active ? 'accentForeground' : 'mutedForeground'} style={active ? styles.activeText : undefined}>{item.label}</Text>
+              {item.badge ? <View style={[styles.badge, { backgroundColor: colors.destructive }]}><Text variant="caption" color="destructiveForeground">{item.badge > 99 ? '99+' : item.badge}</Text></View> : null}
             </Pressable>
           );
         })}
-        <Animated.View style={[styles.underline, { backgroundColor: colors.accent }, underline]} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { borderBottomWidth: StyleSheet.hairlineWidth },
-  row: { flexDirection: 'row', position: 'relative', paddingHorizontal: spacing[2] },
-  tab: { flexDirection: 'row', alignItems: 'center', gap: spacing[1], paddingHorizontal: spacing[3], minHeight: 44, justifyContent: 'center' },
+  wrap: { paddingVertical: spacing[2] },
+  row: { flexDirection: 'row', position: 'relative', paddingHorizontal: spacing[3], gap: spacing[1] },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing[4], minHeight: 40, justifyContent: 'center', borderRadius: radius.full },
+  pill: { position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: radius.full },
+  activeText: { fontFamily: 'Inter_600SemiBold' },
   badge: { minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
-  underline: { position: 'absolute', bottom: 0, left: 0, height: 2, borderRadius: 1 },
 });

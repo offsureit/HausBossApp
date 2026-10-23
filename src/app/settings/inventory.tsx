@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Boxes, Minus, Pencil, Plus, Trash2 } from 'lucide-react-native';
 import type { InventoryItem } from '@/types';
-import { Button, Card, Dialog, EmptyState, IconButton, Screen, Select, Sheet, SkeletonCard, Text, TextField } from '~/components/ui';
+import { Button, Card, Dialog, EmptyState, HeroIconButton, IconButton, IconTile, Screen, Select, Sheet, SkeletonCard, Text, TextField } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useTeamQuery } from '~/features/team/useTeam';
@@ -70,9 +70,9 @@ export default function InventoryScreen() {
 
   return (
     <Screen scroll edges={['left', 'right']} refreshing={query.isRefetching} onRefresh={() => void query.refetch()} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Truck stock', headerBackTitle: 'Back', headerRight: isStaff ? () => <IconButton icon={Plus} label="Add item" variant="filled" tone="accent" onPress={() => setDraft(emptyDraft(filter))} /> : undefined }} />
+      <Stack.Screen options={{ title: 'Truck stock', headerBackTitle: 'Back', headerRight: isStaff ? () => <HeroIconButton icon={Plus} label="Add item" onPress={() => setDraft(emptyDraft(filter))} /> : undefined }} />
       <Select label="Stock location" value={filter} onChange={setFilter} options={[{ value: ALL, label: 'All' }, { value: WAREHOUSE, label: 'Warehouse' }, ...techs.map((t) => ({ value: t.id, label: t.name }))]} />
-      {low > 0 ? <View style={[styles.low, { backgroundColor: withAlpha(colors.warning, 0.12) }]}><AlertTriangle size={16} color={colors.warningForeground} /><Text variant="small" color="warningForeground">{low} item{low === 1 ? '' : 's'} below minimum</Text></View> : null}
+      {low > 0 ? <View style={[styles.low, { backgroundColor: withAlpha(colors.warning, 0.12) }]}><AlertTriangle size={16} color={colors.warning} /><Text variant="small" color="warning" style={styles.strong}>{low} item{low === 1 ? '' : 's'} below minimum</Text></View> : null}
       {query.isPending ? <View style={styles.list}><SkeletonCard /><SkeletonCard /></View>
         : items.length === 0 ? <EmptyState icon={Boxes} title="No stock recorded" action={isStaff ? <Button label="Add item" onPress={() => setDraft(emptyDraft(filter))} /> : undefined} />
         : (
@@ -80,17 +80,22 @@ export default function InventoryScreen() {
             {items.map((i) => {
               const lowItem = inventoryService.isBelowMinimum(i);
               return (
-                <Card key={i.id} style={styles.row}>
-                  <View style={styles.grow}>
-                    <Text variant="bodyMedium">{i.name}{i.sku ? <Text variant="caption" color="mutedForeground"> · {i.sku}</Text> : null}</Text>
-                    <Text variant="caption" color="mutedForeground">{techName(i.technician_id)} · min {i.min_quantity}{i.unit_cost != null ? ` · $${Number(i.unit_cost).toFixed(2)}` : ''}</Text>
+                <Card key={i.id} style={[styles.row, lowItem && { borderColor: colors.warning, borderWidth: 1.5 }]}>
+                  <View style={styles.top}>
+                    <IconTile icon={Boxes} color={lowItem ? colors.warning : colors.accent} size={42} />
+                    <View style={styles.grow}>
+                      <Text variant="bodyMedium" style={styles.strong}>{i.name}</Text>
+                      <Text variant="caption" color="mutedForeground">{[i.sku, techName(i.technician_id), i.unit_cost != null ? `$${Number(i.unit_cost).toFixed(2)} each` : null].filter(Boolean).join(' · ')}</Text>
+                      {lowItem ? <View style={[styles.lowPill, { backgroundColor: withAlpha(colors.warning, 0.12) }]}><AlertTriangle size={12} color={colors.warning} /><Text variant="caption" color="warning" style={styles.strong}>Below minimum ({i.min_quantity})</Text></View> : <Text variant="caption" color="mutedForeground">Minimum {i.min_quantity}</Text>}
+                    </View>
+                    {isStaff ? <View style={styles.actions}><IconButton icon={Pencil} label={`Edit ${i.name}`} variant="filled" size={38} onPress={() => setDraft({ id: i.id, technician_id: i.technician_id ?? WAREHOUSE, name: i.name, sku: i.sku ?? '', unit: i.unit ?? 'ea', quantity: String(i.quantity), min_quantity: String(i.min_quantity), unit_cost: i.unit_cost != null ? String(i.unit_cost) : '' })} /><IconButton icon={Trash2} label={`Delete ${i.name}`} tone="destructive" variant="filled" size={38} onPress={() => setDeleting(i)} /></View> : null}
                   </View>
-                  <View style={styles.qty}>
-                    {isStaff ? <IconButton icon={Minus} label={`Remove one ${i.name}`} variant="outline" size={36} onPress={() => void adjust(i, -1)} disabled={i.quantity <= 0} /> : null}
-                    <Text variant="heading" color={lowItem ? 'warningForeground' : 'foreground'} style={styles.mono}>{i.quantity}<Text variant="caption" color="mutedForeground"> {i.unit ?? ''}</Text></Text>
-                    {isStaff ? <IconButton icon={Plus} label={`Add one ${i.name}`} variant="outline" size={36} onPress={() => void adjust(i, 1)} /> : null}
+                  {/* Quantity stepper: a filled pill with − / + on either side of the count. */}
+                  <View style={[styles.stepper, { backgroundColor: colors.field, borderColor: colors.border }]}>
+                    {isStaff ? <IconButton icon={Minus} label={`Remove one ${i.name}`} variant="filled" size={40} onPress={() => void adjust(i, -1)} disabled={i.quantity <= 0} /> : <View style={styles.spacer} />}
+                    <View style={styles.count}><Text variant="title" color={lowItem ? 'warning' : 'foreground'} style={styles.mono}>{i.quantity}</Text><Text variant="caption" color="mutedForeground">{i.unit ?? ''} in stock</Text></View>
+                    {isStaff ? <IconButton icon={Plus} label={`Add one ${i.name}`} variant="filled" tone="accent" size={40} onPress={() => void adjust(i, 1)} /> : <View style={styles.spacer} />}
                   </View>
-                  {isStaff ? <View style={styles.actions}><IconButton icon={Pencil} label={`Edit ${i.name}`} size={36} onPress={() => setDraft({ id: i.id, technician_id: i.technician_id ?? WAREHOUSE, name: i.name, sku: i.sku ?? '', unit: i.unit ?? 'ea', quantity: String(i.quantity), min_quantity: String(i.min_quantity), unit_cost: i.unit_cost != null ? String(i.unit_cost) : '' })} /><IconButton icon={Trash2} label={`Delete ${i.name}`} tone="destructive" size={36} onPress={() => setDeleting(i)} /></View> : null}
                 </Card>
               );
             })}
@@ -114,11 +119,17 @@ export default function InventoryScreen() {
 const styles = StyleSheet.create({
   content: { gap: spacing[3] },
   list: { gap: spacing[2] },
-  low: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], borderRadius: 8, padding: spacing[3] },
-  row: { gap: spacing[2] },
+  low: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], borderRadius: 12, padding: spacing[3] },
+  row: { gap: spacing[3] },
+  top: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3] },
+  lowPill: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: spacing[2], paddingVertical: 2, marginTop: 2 },
+  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderRadius: 999, padding: 4 },
+  count: { alignItems: 'center' },
+  spacer: { width: 40 },
   rowFields: { flexDirection: 'row', gap: spacing[2], alignItems: 'flex-start' },
   grow: { flex: 1, minWidth: 0, gap: 2 },
   qty: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end' },
-  mono: { fontVariant: ['tabular-nums'], minWidth: 56, textAlign: 'center' },
+  strong: { fontFamily: 'Inter_600SemiBold' },
+  actions: { gap: spacing[2] },
+  mono: { fontVariant: ['tabular-nums'], textAlign: 'center' },
 });

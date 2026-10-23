@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { format, parse } from 'date-fns';
-import { Check, Link2, Send, ShieldCheck, ShieldX, Trash2, XCircle } from 'lucide-react-native';
+import { Check, FileText, Link2, Percent, Send, ShieldCheck, ShieldX, Trash2, UserRound, XCircle } from 'lucide-react-native';
 import { DEFAULT_TAX_RATE, computeTotals, formatMoney } from '@/utils/estimateMath';
 import type { Estimate, EstimateLineItem, EstimateLineItemInput, EstimateSaveInput, Job, LineItemKind } from '@/types';
 import { CatalogPickerSheet } from '~/components/estimates/CatalogPickerSheet';
 import { LineItemsSection } from '~/components/estimates/LineItemsSection';
 import { EstimateStatusBadge } from '~/components/jobs/EstimateList';
-import { Button, Card, DateTimeField, Dialog, EmptyState, Skeleton, Text, TextField, Toggle } from '~/components/ui';
+import { Button, Card, DateTimeField, Dialog, EmptyState, GradientBackdrop, HERO_TEXT_MUTED, SectionCard, Skeleton, Text, TextField, Toggle } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useJobsQuery } from '~/features/jobs/useJobs';
@@ -167,12 +167,19 @@ export default function EstimateScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ title: current ? current.estimate_number : 'New estimate', headerBackTitle: 'Back' }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.headRow}>
-          <View style={styles.grow}>
-            <Text variant="title">{current ? current.title : 'New estimate'}</Text>
-            <Text variant="caption" color="mutedForeground">{job.clientName} · #{job.id.slice(0, 8).toUpperCase()}</Text>
+        {/* Summary card: the brand gradient with the title, customer, status and live total. */}
+        <View style={styles.heroCard}>
+          <GradientBackdrop rounded={radius.xxl} />
+          <View style={styles.headRow}>
+            <Text variant="mono" color={HERO_TEXT_MUTED} style={styles.grow}>{current ? current.estimate_number : 'NEW ESTIMATE'}</Text>
+            <EstimateStatusBadge status={status} />
           </View>
-          <EstimateStatusBadge status={status} />
+          <Text variant="title" color="#ffffff">{draft.title || (current ? current.title : 'New estimate')}</Text>
+          <Text variant="small" color={HERO_TEXT_MUTED}>{job.clientName} · Job #{job.id.slice(0, 8).toUpperCase()}</Text>
+          <View style={styles.heroTotal}>
+            <Text variant="caption" color={HERO_TEXT_MUTED}>Total</Text>
+            <Text style={styles.heroAmount} color="#ffffff">{formatMoney(totals.total)}</Text>
+          </View>
         </View>
         {current?.rejection_reason && status === 'rejected' ? <View style={[styles.note, { backgroundColor: withAlpha(colors.destructive, 0.08), borderColor: withAlpha(colors.destructive, 0.4) }]}><Text variant="small" color="destructive">Rejected: {current.rejection_reason}</Text></View> : null}
         {readOnly ? <Text variant="caption" color="mutedForeground">Read-only — this estimate has been {status.replace('_', ' ')}.</Text> : null}
@@ -184,8 +191,11 @@ export default function EstimateScreen() {
           </Card>
         ) : null}
 
+        <SectionCard title="Estimate" icon={FileText}>
         <TextField label="Title *" value={draft.title} onChangeText={(v) => set('title', v)} editable={!readOnly} />
         <TextField label="Description" value={draft.description} onChangeText={(v) => set('description', v)} multiline editable={!readOnly} />
+        </SectionCard>
+        <SectionCard title="Client" icon={UserRound} color={colors.success}>
         <TextField label="Client name" value={draft.client_name} onChangeText={(v) => set('client_name', v)} editable={!readOnly} />
         <TextField label="Client email" value={draft.client_email} onChangeText={(v) => set('client_email', v)} keyboardType="email-address" autoCapitalize="none" editable={!readOnly} hint="Needed to send the estimate." />
         <View style={styles.row}>
@@ -193,39 +203,38 @@ export default function EstimateScreen() {
           <View style={styles.grow}><DateTimeField label="Valid until" mode="date" value={validUntil} onChange={(d) => set('valid_until', d ? format(d, 'yyyy-MM-dd') : '')} disabled={readOnly} /></View>
         </View>
         <TextField label="Client address" value={draft.client_address} onChangeText={(v) => set('client_address', v)} multiline editable={!readOnly} />
+        </SectionCard>
 
         <LineItemsSection kind="part" items={draft.items} onChange={(items) => set('items', items)} readOnly={readOnly} onPickFromCatalog={() => setPicker('part')} />
         <LineItemsSection kind="service" items={draft.items} onChange={(items) => set('items', items)} readOnly={readOnly} onPickFromCatalog={() => setPicker('service')} />
 
+        <SectionCard title="Pricing" icon={Percent} color={colors.warning} action={<Toggle value={draft.taxEnabled} onValueChange={(v) => set('taxEnabled', v)} disabled={readOnly} accessibilityLabel="Apply tax" />} subtitle={draft.taxEnabled ? 'Tax applied' : 'No tax'}>
         <View style={styles.row}>
           <View style={styles.grow}><TextField label="Discount ($)" value={draft.discount_amount} onChangeText={(v) => set('discount_amount', v)} keyboardType="decimal-pad" editable={!readOnly} /></View>
           <View style={styles.grow}><TextField label="Tax rate (%)" value={draft.tax_rate} onChangeText={(v) => set('tax_rate', v)} keyboardType="decimal-pad" editable={!readOnly && draft.taxEnabled} /></View>
         </View>
-        <Card style={styles.switchRow}>
-          <Text variant="small" style={styles.grow}>Apply tax</Text>
-          <Toggle value={draft.taxEnabled} onValueChange={(v) => set('taxEnabled', v)} disabled={readOnly} accessibilityLabel="Apply tax" />
-        </Card>
         <TextField label="Internal notes" value={draft.notes} onChangeText={(v) => set('notes', v)} multiline editable={!readOnly} />
+        </SectionCard>
 
         <Card style={styles.totals} accessibilityLabel="Totals">
           <TotalRow label="Parts" value={formatMoney(totals.subtotalParts)} />
           <TotalRow label="Services" value={formatMoney(totals.subtotalServices)} />
           {totals.discountAmount > 0 ? <TotalRow label="Discount" value={`−${formatMoney(totals.discountAmount)}`} /> : null}
           <TotalRow label={`Tax (${totals.taxRate}%)`} value={formatMoney(totals.taxAmount)} />
-          <View style={[styles.totalLine, { borderTopColor: colors.border }]}><Text variant="heading">Total</Text><Text variant="heading" style={styles.mono}>{formatMoney(totals.total)}</Text></View>
+          <View style={[styles.grandTotal, { borderTopColor: colors.border }]}><Text variant="heading">Total</Text><Text variant="title" color="accent" style={styles.mono}>{formatMoney(totals.total)}</Text></View>
           {current && Number(current.total) !== totals.total && !readOnly ? <Text variant="caption" color="mutedForeground">Saved total: {formatMoney(Number(current.total))}</Text> : null}
         </Card>
 
         <View style={styles.actions}>
-          {!readOnly ? <Button label="Save draft" variant="outline" onPress={() => void save()} loading={busy === 'save'} disabled={!!busy} /> : null}
-          {showSubmit ? <Button label="Submit for approval" icon={<Check size={18} color={colors.accentForeground} />} onPress={() => void submit()} loading={busy === 'submit'} disabled={!!busy} /> : null}
-          {showApprove && current ? <Button label="Approve" icon={<ShieldCheck size={18} color={colors.accentForeground} />} onPress={() => void run('approve', () => estimatesService.approve(current), 'Estimate approved')} loading={busy === 'approve'} disabled={!!busy} /> : null}
-          {showApprove && !current ? <Button label="Save & approve" icon={<ShieldCheck size={18} color={colors.accentForeground} />} onPress={() => void saveAndApprove()} loading={busy === 'approve'} disabled={!!busy} /> : null}
-          {showReject ? <Button label="Reject" variant="outline" icon={<ShieldX size={18} color={colors.foreground} />} onPress={() => setRejectOpen(true)} disabled={!!busy} /> : null}
-          {showSend ? <Button label="Send to client" icon={<Send size={18} color={colors.accentForeground} />} onPress={() => void send()} loading={busy === 'send'} disabled={!!busy || !draft.client_email} /> : null}
-          {showVoid ? <Button label="Void" variant="ghost" icon={<XCircle size={18} color={colors.foreground} />} onPress={() => void run('void', () => estimatesService.voidEstimate(current as Estimate), 'Estimate voided')} loading={busy === 'void'} disabled={!!busy} /> : null}
-          {status === 'void' && isStaff && current ? <Button label="Reopen" variant="outline" onPress={() => void run('reopen', () => estimatesService.reopen(current), 'Estimate reopened')} loading={busy === 'reopen'} disabled={!!busy} /> : null}
-          {current && isAdmin && !readOnly ? <Button label="Delete" variant="ghost" icon={<Trash2 size={18} color={colors.destructive} />} onPress={() => setDeleteOpen(true)} disabled={!!busy} /> : null}
+          {!readOnly ? <Button label="Save draft" variant="outline" size="lg" fullWidth onPress={() => void save()} loading={busy === 'save'} disabled={!!busy} /> : null}
+          {showSubmit ? <Button size="lg" fullWidth label="Submit for approval" icon={<Check size={18} color={colors.accentForeground} />} onPress={() => void submit()} loading={busy === 'submit'} disabled={!!busy} /> : null}
+          {showApprove && current ? <Button size="lg" fullWidth label="Approve" icon={<ShieldCheck size={18} color={colors.accentForeground} />} onPress={() => void run('approve', () => estimatesService.approve(current), 'Estimate approved')} loading={busy === 'approve'} disabled={!!busy} /> : null}
+          {showApprove && !current ? <Button size="lg" fullWidth label="Save & approve" icon={<ShieldCheck size={18} color={colors.accentForeground} />} onPress={() => void saveAndApprove()} loading={busy === 'approve'} disabled={!!busy} /> : null}
+          {showReject ? <Button size="lg" fullWidth label="Reject" variant="outline" icon={<ShieldX size={18} color={colors.foreground} />} onPress={() => setRejectOpen(true)} disabled={!!busy} /> : null}
+          {showSend ? <Button size="lg" fullWidth label="Send to client" icon={<Send size={18} color={colors.accentForeground} />} onPress={() => void send()} loading={busy === 'send'} disabled={!!busy || !draft.client_email} /> : null}
+          {showVoid ? <Button fullWidth label="Void" variant="ghost" icon={<XCircle size={18} color={colors.foreground} />} onPress={() => void run('void', () => estimatesService.voidEstimate(current as Estimate), 'Estimate voided')} loading={busy === 'void'} disabled={!!busy} /> : null}
+          {status === 'void' && isStaff && current ? <Button size="lg" fullWidth label="Reopen" variant="outline" onPress={() => void run('reopen', () => estimatesService.reopen(current), 'Estimate reopened')} loading={busy === 'reopen'} disabled={!!busy} /> : null}
+          {current && isAdmin && !readOnly ? <Button fullWidth label="Delete estimate" variant="danger-ghost" icon={<Trash2 size={18} color={colors.destructive} />} onPress={() => setDeleteOpen(true)} disabled={!!busy} /> : null}
         </View>
       </ScrollView>
 
@@ -252,9 +261,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing[2], alignItems: 'flex-start' },
   note: { borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3] },
   linkCard: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   totals: { gap: spacing[1] },
+  grandTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, marginTop: spacing[2], paddingTop: spacing[3] },
+  heroCard: { borderRadius: radius.xxl, padding: spacing[5], gap: spacing[1], overflow: 'hidden' },
+  heroTotal: { marginTop: spacing[3], gap: 2 },
+  heroAmount: { fontFamily: 'Inter_700Bold', fontSize: 34, lineHeight: 40, letterSpacing: -0.8 },
   totalLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: spacing[1] },
   mono: { fontVariant: ['tabular-nums'] },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], paddingTop: spacing[2] },
+  actions: { gap: spacing[2], paddingTop: spacing[2] },
 });

@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { OfflineBanner } from '~/components/OfflineBanner';
+import { StackHeader, type StackHeaderProps } from '~/components/navigation/StackHeader';
 import { ToastHost } from '~/components/ui';
 import { AppProviders } from '~/features/app/AppProviders';
 import { useAuth } from '~/features/auth/AuthProvider';
@@ -75,7 +76,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     <NavigationThemeProvider value={navTheme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <View style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, headerTitleStyle: { fontFamily: fontFamily.semibold }, headerBackButtonDisplayMode: 'minimal', headerTintColor: colors.accent, headerStyle: { backgroundColor: colors.background } }}>
+      <Stack screenOptions={{ headerShown: false, header: (props) => <StackHeader {...(props as unknown as StackHeaderProps)} />, contentStyle: { backgroundColor: colors.background }, headerTitleStyle: { fontFamily: fontFamily.semibold }, headerBackButtonDisplayMode: 'minimal', headerTintColor: colors.accent, headerStyle: { backgroundColor: colors.background } }}>
         <Stack.Screen name="index" />
         {/* Deep-link targets that work signed in or out */}
         <Stack.Screen name="accept-invite" />
@@ -86,7 +87,8 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         </Stack.Protected>
         <Stack.Protected guard={signedIn} redirectTo="/login">
           <Stack.Screen name="(app)" />
-          <Stack.Screen name="job/[id]" options={{ headerShown: true, title: 'Job' }} />
+          {/* Job details brings its own gradient card, so its header stays light. */}
+          <Stack.Screen name="job/[id]" options={{ headerShown: true, title: 'Job', header: (props) => <StackHeader {...(props as unknown as StackHeaderProps)} variant="plain" /> }} />
           <Stack.Screen name="job/new" options={{ headerShown: true, title: 'New job', presentation: 'modal' }} />
           <Stack.Screen name="estimate/[id]" options={{ headerShown: true, title: 'Estimate' }} />
           <Stack.Screen name="chat/[jobId]" options={{ headerShown: true, title: 'Chat' }} />

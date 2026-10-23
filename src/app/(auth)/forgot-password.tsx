@@ -3,7 +3,7 @@ import { Keyboard, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { CheckCircle2, Mail } from 'lucide-react-native';
 import Animated from 'react-native-reanimated';
-import { Button, Screen, ScreenHeader, Text, TextField } from '~/components/ui';
+import { Button, HeroHeader, Screen, Text, TextField } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { haptics } from '~/lib/haptics';
 import { useMotion } from '~/motion';
@@ -31,8 +31,8 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
-      <ScreenHeader title="Reset password" subtitle="We'll email you a link that works once and expires after an hour." large={false} />
+    <Screen scroll hero edges={['left', 'right', 'bottom']}>
+      <HeroHeader eyebrow="HausBoss" title="Reset password" subtitle="We'll email you a link that works once and expires after an hour." />
       {sent ? (
         <Animated.View entering={enterFade()} style={styles.done}>
           <CheckCircle2 size={40} color={colors.success} />

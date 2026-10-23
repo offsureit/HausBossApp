@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { addDays, format, isSameDay } from 'date-fns';
+import { addDays, format, isSameDay, isToday, startOfWeek } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, Inbox, Plus } from 'lucide-react-native';
 import { bucketJobsByLocalDay } from '@/components/calendarLayout';
 import { getContractorColor } from '@/utils/contractorColors';
@@ -12,14 +13,14 @@ import { DayPager } from '~/components/calendar/DayPager';
 import { JobCard } from '~/components/jobs/JobCard';
 import { ReassignSheet } from '~/components/jobs/ReassignSheet';
 import { SwipeableJobRow } from '~/components/jobs/SwipeableJobRow';
-import { Button, DateTimeField, EmptyState, IconButton, Screen, SegmentedControl, Select, Sheet, SkeletonCard, Text } from '~/components/ui';
+import { Button, DateTimeField, EmptyState, GradientBackdrop, HERO_TEXT_MUTED, HeroIconButton, IconButton, Screen, SegmentedControl, Select, Sheet, SkeletonCard, Text, useLightStatusBar } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useJobActions } from '~/features/jobs/useJobActions';
 import { useJobsQuery } from '~/features/jobs/useJobs';
 import { useTeamQuery } from '~/features/team/useTeam';
 import { useTheme } from '~/theme/ThemeProvider';
-import { spacing } from '~/theme/tokens';
+import { radius, spacing } from '~/theme/tokens';
 
 type CalendarView = 'day' | 'list';
 const ALL = 'all';
@@ -27,6 +28,8 @@ const ALL = 'all';
 /** Calendar: swipe between days on the 24-hour grid, or a list; filters by employee ("All Employees") and status. */
 export default function CalendarScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  useLightStatusBar();
   const router = useRouter();
   const { isStaff } = useAuth();
   const { companyId } = useCompany();
@@ -53,19 +56,37 @@ export default function CalendarScreen() {
   const { byDay, unscheduled } = useMemo(() => bucketJobsByLocalDay(filtered), [filtered]);
   const dayJobs = useMemo(() => byDay.get(format(anchor, 'yyyy-MM-dd')) ?? [], [byDay, anchor]);
   const listJobs = useMemo(() => [...dayJobs, ...unscheduled].sort((a, b) => (a.sortOrder ?? 1e9) - (b.sortOrder ?? 1e9) || (a.scheduledDate || 'z').localeCompare(b.scheduledDate || 'z')), [dayJobs, unscheduled]);
+  const week = useMemo(() => { const start = startOfWeek(anchor, { weekStartsOn: 1 }); return Array.from({ length: 7 }, (_, i) => addDays(start, i)); }, [anchor]);
   const activeFilters = (technician !== ALL ? 1 : 0) + (status !== ALL ? 1 : 0);
 
   return (
-    <Screen padded={false} contentContainerStyle={styles.root}>
-      <View style={styles.header}>
+    <Screen padded={false} hero contentContainerStyle={styles.root}>
+      {/* Gradient header: day navigation and a week strip (dots mark days with jobs). */}
+      <View style={[styles.hero, { paddingTop: insets.top + spacing[2] }]}>
+        <GradientBackdrop watermark={false} />
         <View style={styles.nav}>
-          <IconButton icon={ChevronLeft} label="Previous day" variant="outline" onPress={() => setAnchor((a) => addDays(a, -1))} />
+          <HeroIconButton icon={ChevronLeft} label="Previous week" onPress={() => setAnchor((a) => addDays(a, -7))} />
           <View style={styles.title}>
-            <Text variant="title">{format(anchor, 'EEEE')}</Text>
-            <Text variant="small" color="mutedForeground">{format(anchor, 'MMM d, yyyy')} · {dayJobs.length} job{dayJobs.length === 1 ? '' : 's'}</Text>
+            <Text variant="title" color="#ffffff">{format(anchor, 'MMMM yyyy')}</Text>
+            <Text variant="small" color={HERO_TEXT_MUTED}>{format(anchor, 'EEEE, MMM d')} · {dayJobs.length} job{dayJobs.length === 1 ? '' : 's'}</Text>
           </View>
-          <IconButton icon={ChevronRight} label="Next day" variant="outline" onPress={() => setAnchor((a) => addDays(a, 1))} />
+          <HeroIconButton icon={ChevronRight} label="Next week" onPress={() => setAnchor((a) => addDays(a, 7))} />
         </View>
+        <View style={styles.week} accessibilityRole="tablist">
+          {week.map((d) => {
+            const selected = isSameDay(d, anchor);
+            const count = byDay.get(format(d, 'yyyy-MM-dd'))?.length ?? 0;
+            return (
+              <Pressable key={d.toISOString()} accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={`${format(d, 'EEEE, MMMM d')}, ${count} job${count === 1 ? '' : 's'}`} onPress={() => setAnchor(d)} style={[styles.day, selected && styles.daySelected]}>
+                <Text variant="caption" color={selected ? colors.primary : HERO_TEXT_MUTED} style={styles.dayName}>{format(d, 'EEEEE')}</Text>
+                <Text variant="heading" color={selected ? colors.primary : '#ffffff'}>{format(d, 'd')}</Text>
+                <View style={[styles.dayDot, { backgroundColor: count ? (selected ? colors.accent : '#ffffff') : 'transparent' }, isToday(d) && !count && { borderWidth: 1, borderColor: selected ? colors.accent : '#ffffff' }]} />
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+      <View style={styles.header}>
         <View style={styles.tools}>
           <Button label="Today" variant="outline" size="sm" onPress={() => setAnchor(new Date())} disabled={isSameDay(anchor, new Date())} />
           <Button label={activeFilters ? `Filters (${activeFilters})` : 'Filters'} variant={activeFilters ? 'secondary' : 'outline'} size="sm" onPress={() => setFilters(true)} />
@@ -105,7 +126,13 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[2], gap: spacing[2] },
+  header: { paddingHorizontal: spacing[4], paddingTop: spacing[3], paddingBottom: spacing[2], gap: spacing[2] },
+  hero: { paddingHorizontal: spacing[4], paddingBottom: spacing[4], gap: spacing[3], borderBottomLeftRadius: radius.xxl, borderBottomRightRadius: radius.xxl, overflow: 'hidden' },
+  week: { flexDirection: 'row', gap: 6 },
+  day: { flex: 1, alignItems: 'center', paddingVertical: spacing[2], borderRadius: radius.md, gap: 2 },
+  daySelected: { backgroundColor: '#ffffff' },
+  dayName: { fontFamily: 'Inter_600SemiBold' },
+  dayDot: { width: 6, height: 6, borderRadius: 3 },
   nav: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   title: { flex: 1, alignItems: 'center' },
   tools: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },

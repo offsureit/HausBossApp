@@ -8,10 +8,17 @@ env:
   PASSWORD: ${TECH_PASSWORD}
 ---
 - runFlow: shared/login.yaml
+# The tab opens on a tall gradient header: wait for the screen, then scroll the target into view.
 - extendedWaitUntil:
     visible:
-      text: "Maestro Offline"
+      text: "Next up"
     timeout: 60000
+- scrollUntilVisible:
+    element:
+      text: "Maestro Offline"
+    direction: DOWN
+    centerElement: true
+    timeout: 30000
 - setAirplaneMode: enabled
 - extendedWaitUntil:
     visible:

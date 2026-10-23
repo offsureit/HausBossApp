@@ -16,10 +16,13 @@ export interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollProps?: Omit<ScrollViewProps, 'children' | 'refreshControl' | 'contentContainerStyle'>;
+  /** The first child is a `HeroHeader` that runs under the status bar (drops the top safe-area edge). */
+  hero?: boolean;
 }
 
 /** Safe-area aware page background. Tab screens leave the bottom edge to the tab bar. */
-export function Screen({ children, scroll = false, refreshing = false, onRefresh, edges = ['top', 'left', 'right'], padded = true, style, contentContainerStyle, scrollProps }: ScreenProps) {
+export function Screen({ children, scroll = false, refreshing = false, onRefresh, edges: edgesProp, padded = true, style, contentContainerStyle, scrollProps, hero = false }: ScreenProps) {
+  const edges = edgesProp ?? (hero ? ['left', 'right'] : ['top', 'left', 'right']);
   const { colors } = useTheme();
   const inner = padded ? styles.padded : null;
   return (
@@ -64,7 +67,7 @@ export function ScreenHeader({ title, subtitle, right, large = true }: ScreenHea
 const styles = StyleSheet.create({
   root: { flex: 1 },
   padded: { paddingHorizontal: spacing[4] },
-  scrollContent: { paddingTop: spacing[2], paddingBottom: spacing[8], gap: spacing[4] },
+  scrollContent: { paddingTop: spacing[4], paddingBottom: spacing[8], gap: spacing[4] },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing[3], paddingVertical: spacing[2] },
   headerText: { flex: 1, minWidth: 0, gap: spacing[1] },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },

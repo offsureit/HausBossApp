@@ -6,7 +6,7 @@ import { Text } from '~/components/ui';
 import { haptics } from '~/lib/haptics';
 import { useMotion } from '~/motion';
 import { useTheme } from '~/theme/ThemeProvider';
-import { fontFamily, radius, spacing, withAlpha } from '~/theme/tokens';
+import { elevation, fontFamily, radius, spacing } from '~/theme/tokens';
 
 export type TabIcon = ComponentType<{ size?: number; color?: string }>;
 
@@ -26,7 +26,7 @@ export interface AnimatedTabBarProps extends BottomTabBarProps {
  * under Reduce Motion. Tabs with `href: null` are hidden by the router before they reach here.
  */
 export function AnimatedTabBar({ state, descriptors, emitter, navigateToTab, insets, icons, badges }: AnimatedTabBarProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const { reduced, spring, duration } = useMotion();
   const routes = state.routes.filter((r) => {
     const o = descriptors[r.key]?.options as { href?: unknown; tabBarButton?: unknown } | undefined;
@@ -41,11 +41,11 @@ export function AnimatedTabBar({ state, descriptors, emitter, navigateToTab, ins
   const pillStyle = useAnimatedStyle(() => ({ left: `${(pill.get() / count) * 100}%`, width: `${100 / count}%` }));
 
   return (
-    <View style={[styles.bar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, spacing[2]) }]} accessibilityRole="tablist">
+    <View style={[styles.bar, { backgroundColor: colors.card, borderColor: colors.border, paddingBottom: Math.max(insets.bottom, spacing[2]) }, elevation(3, scheme), { shadowOffset: { width: 0, height: -6 } }]} accessibilityRole="tablist">
       {/* The track is inset by the bar's horizontal padding so the pill's percentage offsets line up with the tabs. */}
       <View pointerEvents="none" style={styles.pillTrack}>
         <Animated.View style={[styles.pillSlot, pillStyle]}>
-          <View style={[styles.pill, { backgroundColor: withAlpha(colors.accent, 0.12) }]} />
+          <View style={[styles.pill, { backgroundColor: colors.accent }]} />
         </Animated.View>
       </View>
       {routes.map((route) => {
@@ -90,10 +90,12 @@ function TabItem({ label, Icon, focused, badge, onPress, onLongPress }: { label:
   }, [focused, reduced, spring, duration.instant, scale, lift]);
   const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }, { translateY: lift.get() }] }));
   const color = focused ? colors.accent : colors.mutedForeground;
+  // The active icon sits on the solid accent pill.
+  const iconColor = focused ? colors.accentForeground : colors.mutedForeground;
   return (
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={badge ? `${label}, ${badge} unread` : label} onPress={onPress} onLongPress={onLongPress} style={styles.item}>
       <Animated.View style={[styles.iconWrap, iconStyle]}>
-        {Icon ? <Icon size={24} color={color} /> : null}
+        {Icon ? <Icon size={22} color={iconColor} /> : null}
         {badge > 0 ? <View style={[styles.badge, { backgroundColor: colors.destructive, borderColor: colors.card }]}><Text variant="caption" color="destructiveForeground" style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text></View> : null}
       </Animated.View>
       <Text variant="caption" color={color} style={[styles.label, focused && { fontFamily: fontFamily.semibold }]}>{label}</Text>
@@ -102,10 +104,10 @@ function TabItem({ label, Icon, focused, badge, onPress, onLongPress }: { label:
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing[2], paddingHorizontal: spacing[2] },
+  bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, paddingTop: spacing[2], paddingHorizontal: spacing[2] },
   pillTrack: { position: 'absolute', left: spacing[2], right: spacing[2], top: spacing[2], height: ICON_WRAP },
   pillSlot: { position: 'absolute', top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  pill: { width: 56, height: 32, borderRadius: radius.full },
+  pill: { width: 52, height: 34, borderRadius: radius.full },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 52, gap: 2 },
   iconWrap: { width: ICON_WRAP, height: ICON_WRAP, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: 0, right: -4, minWidth: 18, height: 18, borderRadius: 9, borderWidth: 2, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },

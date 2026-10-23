@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { FileText, Plus } from 'lucide-react-native';
 import { formatMoney } from '@/utils/estimateMath';
 import type { Estimate, EstimateLineItem, EstimateStatus, Job } from '@/types';
-import { Button, Card, EmptyState, Sheet, Skeleton, Text } from '~/components/ui';
+import { Button, Card, EmptyState, IconTile, Sheet, Skeleton, Text } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useJobEstimates } from '~/features/jobs/useJobEstimates';
 import { toast } from '~/features/toast/store';
@@ -55,18 +55,19 @@ export function EstimateList({ job }: { job: Job }) {
 
   return (
     <View style={styles.wrap}>
-      {job.status !== 'completed' ? <Button label="New estimate" variant="outline" icon={<Plus size={16} color={colors.foreground} />} onPress={() => openEditor('new')} /> : null}
+      {job.status !== 'completed' ? <Button label="New estimate" size="lg" fullWidth icon={<Plus size={18} color={colors.accentForeground} />} onPress={() => openEditor('new')} /> : null}
       {loading && estimates.length === 0 ? <View style={styles.wrap}><Skeleton height={64} /><Skeleton height={64} /></View>
         : estimates.length === 0 ? <EmptyState icon={FileText} title="No estimates yet for this job" message={error ?? 'Create one with the catalog picker and send it to the client.'} />
         : estimates.map((e) => (
           <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={`Estimate ${e.estimate_number}, ${e.title}, ${formatMoney(Number(e.total))}`} onPress={() => void show(e)}>
             <Card style={styles.rowCard}>
+              <IconTile icon={FileText} />
               <View style={styles.rowText}>
                 <View style={styles.rowHead}><Text variant="mono" color="mutedForeground">{e.estimate_number}</Text><EstimateStatusBadge status={e.status} /></View>
                 <Text variant="bodyMedium">{e.title}</Text>
                 <Text variant="caption" color="mutedForeground">{new Date(e.created_at).toLocaleDateString()}{e.valid_until ? ` · valid until ${new Date(`${e.valid_until}T12:00:00`).toLocaleDateString()}` : ''}</Text>
               </View>
-              <Text variant="heading">{formatMoney(Number(e.total))}</Text>
+              <Text variant="heading" style={styles.amount}>{formatMoney(Number(e.total))}</Text>
             </Card>
           </Pressable>
         ))}
@@ -117,6 +118,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: radius.full, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: spacing[2], paddingVertical: 2 },
   rowCard: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
+  amount: { fontFamily: 'Inter_700Bold' },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   line: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingVertical: spacing[2], borderBottomWidth: StyleSheet.hairlineWidth },
   totals: { gap: 4, paddingTop: spacing[2] },

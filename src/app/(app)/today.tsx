@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { format } from 'date-fns';
-import { CalendarCheck2, Wifi, WifiOff, AlertTriangle } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
+import { format, isToday } from 'date-fns';
+import { AlertTriangle, Briefcase, CalendarCheck2, CheckCircle2, Clock3, Wifi, WifiOff } from 'lucide-react-native';
 import Animated from 'react-native-reanimated';
 import type { Job, JobStatus } from '@/types';
 import { JobCard } from '~/components/jobs/JobCard';
@@ -9,7 +9,7 @@ import { LocationPermissionSheet } from '~/components/location/LocationPermissio
 import { OnMyWaySheet } from '~/components/jobs/OnMyWaySheet';
 import { SwipeableJobRow } from '~/components/jobs/SwipeableJobRow';
 import { primaryActionFor, type PrimaryActionKind } from '~/components/jobs/primaryAction';
-import { Button, EmptyState, Screen, ScreenHeader, SkeletonCard, Text } from '~/components/ui';
+import { Button, EmptyState, HeroHeader, HeroPill, HeroStat, Screen, SectionHeader, SkeletonCard, Text } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { groupTechnicianJobs, isMine, nextJob } from '~/features/jobs/grouping';
@@ -21,7 +21,7 @@ import { backgroundLocation } from '~/services/backgroundLocation';
 import { locationsService } from '~/services/locations';
 import { useMotion } from '~/motion';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing, withAlpha } from '~/theme/tokens';
+import { spacing } from '~/theme/tokens';
 
 /** Technician home: the next job as a hero with the big status action, then the rest of today / upcoming / completed (§8.4). */
 export default function TodayScreen() {
@@ -74,20 +74,22 @@ export default function TodayScreen() {
     return <Button label={action.label} size={size} fullWidth={size === 'lg'} icon={<Icon size={size === 'lg' ? 20 : 18} color={colors.accentForeground} />} loading={busy} onPress={() => act(job, action.kind)} />;
   };
   const firstName = profile?.first_name?.trim();
+  const doneToday = groups.completed.filter((j) => j.updatedAt && isToday(new Date(j.updatedAt))).length;
 
   return (
-    <Screen scroll refreshing={jobs.isRefetching} onRefresh={() => void jobs.refetch()}>
-      <ScreenHeader
-        title={firstName ? `Hi ${firstName}` : 'My jobs'}
-        subtitle={format(new Date(), 'EEEE, MMM d')}
-        right={activeJob ? (
-          tracking.mode === 'background' ? (
-            <View style={[styles.pill, { backgroundColor: withAlpha(colors.success, 0.12) }]}><Wifi size={14} color={colors.success} /><Text variant="caption" color="success">Sharing location</Text></View>
-          ) : (
-            <Pressable accessibilityRole="button" accessibilityLabel="Location is only shared while the app is open. Fix" onPress={() => setExplain(hero ?? mine[0] ?? null)} style={[styles.pill, { backgroundColor: withAlpha(colors.warning, 0.15) }]}><AlertTriangle size={14} color={colors.warning} /><Text variant="caption" color="warning">Location while open</Text></Pressable>
-          )
-        ) : undefined}
-      />
+    <Screen scroll hero refreshing={jobs.isRefetching} onRefresh={() => void jobs.refetch()}>
+      <HeroHeader eyebrow={format(new Date(), 'EEEE, MMM d')} title={firstName ? `Hi ${firstName}` : 'My jobs'} subtitle={hero ? `Next: ${hero.clientName}` : 'You are all caught up'}>
+        {activeJob ? (
+          tracking.mode === 'background'
+            ? <HeroPill icon={Wifi} label="Sharing location" tone="#bbf7d0" />
+            : <HeroPill icon={AlertTriangle} label="Location only while open · Fix" tone="#fde68a" onPress={() => setExplain(hero ?? mine[0] ?? null)} />
+        ) : null}
+        <View style={styles.stats}>
+          <HeroStat icon={Briefcase} value={groups.today.length} label="Jobs today" />
+          <HeroStat icon={CheckCircle2} value={doneToday} label="Done today" />
+          <HeroStat icon={Clock3} value={hero?.scheduledDate ? format(new Date(hero.scheduledDate), 'h:mm') : '—'} label={hero?.scheduledDate ? `Next · ${format(new Date(hero.scheduledDate), 'a')}` : 'Next job'} />
+        </View>
+      </HeroHeader>
       {jobs.isPending ? (
         <View style={styles.list}><SkeletonCard /><SkeletonCard /><SkeletonCard /></View>
       ) : jobs.isError && !jobs.data ? (
@@ -120,16 +122,15 @@ export default function TodayScreen() {
 
 function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
-    <View style={styles.section} accessibilityRole="summary" accessibilityLabel={`${title}, ${count}`}>
-      <View style={styles.sectionHead}><Text variant="overline" color="mutedForeground">{title}</Text><Text variant="caption" color="mutedForeground">{count}</Text></View>
+    <View style={styles.section}>
+      <SectionHeader title={title} count={count} />
       <View style={styles.list}>{children}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing[2] },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  section: { gap: spacing[3] },
   list: { gap: spacing[3] },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: radius.full, paddingHorizontal: spacing[2], paddingVertical: 4 },
+  stats: { flexDirection: 'row', gap: spacing[2] },
 });

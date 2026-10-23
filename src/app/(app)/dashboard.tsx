@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type ComponentType } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { formatDistanceToNowStrict, isToday } from 'date-fns';
+import { format, formatDistanceToNowStrict, isToday } from 'date-fns';
 import { Activity, CheckCircle2, ChevronRight, Inbox, Plus, Search, Truck, Users, WifiOff, Wrench } from 'lucide-react-native';
 import { getContractorColor } from '@/utils/contractorColors';
 import { EMPLOYEE_ROLE_LABEL, assignableEmployees, employeeOptionLabel, isAssignedTo, openJobsFor } from '@/utils/employees';
@@ -13,7 +13,7 @@ import { EmployeeSheet } from '~/components/dashboard/EmployeeSheet';
 import { JobCard } from '~/components/jobs/JobCard';
 import { ReassignSheet } from '~/components/jobs/ReassignSheet';
 import { SwipeableJobRow } from '~/components/jobs/SwipeableJobRow';
-import { Button, Card, EmptyState, IconButton, Screen, ScreenHeader, Select, Skeleton, SkeletonCard, StatusBadge, Text } from '~/components/ui';
+import { Avatar, Button, Card, EmptyState, HeroHeader, HeroIconButton, HeroStat, Screen, SectionHeader, Select, SkeletonCard, StatusBadge, Text } from '~/components/ui';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useJobActions } from '~/features/jobs/useJobActions';
 import { useJobsQuery } from '~/features/jobs/useJobs';
@@ -21,7 +21,7 @@ import { useCompanyLocations } from '~/features/locations/useLocations';
 import { useTeamQuery } from '~/features/team/useTeam';
 import { useMotion } from '~/motion';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing, withAlpha } from '~/theme/tokens';
+import { spacing } from '~/theme/tokens';
 import Animated from 'react-native-reanimated';
 
 const ALL = 'all';
@@ -63,18 +63,21 @@ export default function DashboardScreen() {
   const assigneeOf = useCallback((job: Job) => employees.find((e) => isAssignedTo(job, e)) ?? null, [employees]);
 
   return (
-    <Screen scroll refreshing={jobs.isRefetching} onRefresh={() => { void jobs.refetch(); void team.refetch(); }}>
-      <ScreenHeader title="Dashboard" subtitle={company?.name} right={<><IconButton icon={Search} label="Search" variant="outline" onPress={() => router.push('/search')} /><IconButton icon={Plus} label="New job" variant="filled" tone="accent" onPress={() => router.push('/job/new')} /></>} />
-      <View style={styles.kpis}>
-        <Kpi icon={Activity} label="Jobs today" value={stats.today} color={colors.accent} loading={jobs.isPending} index={0} />
-        <Kpi icon={Wrench} label="In progress" value={stats.inProgress} color="#3b82f6" loading={jobs.isPending} index={1} />
-        <Kpi icon={CheckCircle2} label="Completed today" value={stats.completedToday} color={colors.success} loading={jobs.isPending} index={2} />
-        <Kpi icon={Truck} label="Employees located" value={stats.located} color="#8b5cf6" loading={false} index={3} />
-      </View>
+    <Screen scroll hero refreshing={jobs.isRefetching} onRefresh={() => { void jobs.refetch(); void team.refetch(); }}>
+      <HeroHeader eyebrow={format(new Date(), 'EEEE, MMM d')} title="Dashboard" subtitle={company?.name} right={<><HeroIconButton icon={Search} label="Search" onPress={() => router.push('/search')} /><HeroIconButton icon={Plus} label="New job" onPress={() => router.push('/job/new')} /></>}>
+        <View style={styles.kpis}>
+          <Kpi icon={Activity} label="Jobs today" value={stats.today} loading={jobs.isPending} index={0} />
+          <Kpi icon={Wrench} label="In progress" value={stats.inProgress} loading={jobs.isPending} index={1} />
+        </View>
+        <View style={styles.kpis}>
+          <Kpi icon={CheckCircle2} label="Completed today" value={stats.completedToday} loading={jobs.isPending} index={2} />
+          <Kpi icon={Truck} label="Employees located" value={stats.located} loading={false} index={3} />
+        </View>
+      </HeroHeader>
 
       <View style={styles.section}>
         <View style={styles.sectionHead}>
-          <Text variant="overline" color="mutedForeground">Live map</Text>
+          <SectionHeader title="Live map" />
           <CheckStatusButton companyId={companyId} technicians={people.filter((p) => p.role === 'contractor')} onLocations={merge} />
         </View>
         <View style={styles.filters}>
@@ -104,7 +107,7 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text variant="overline" color="mutedForeground">Employees</Text>
+        <SectionHeader title="Employees" count={people.length} />
         {team.isPending ? <SkeletonCard /> : people.length === 0 ? <EmptyState icon={Users} title="No employees yet" /> : (
           <Card padded={false}>
             {people.map((e, i) => {
@@ -112,7 +115,7 @@ export default function DashboardScreen() {
               const count = openJobsFor(list, e).length;
               return (
                 <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={`${e.name}: ${count} open job${count === 1 ? '' : 's'}`} onPress={() => setPersonId(e.id)} style={[styles.rosterRow, i > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                  <View style={[styles.dot, { backgroundColor: getContractorColor(e.name, e.color) }]} />
+                  <Avatar name={e.name} firstName={e.firstName} lastName={e.lastName} color={getContractorColor(e.name, e.color)} size={40} />
                   <View style={styles.grow}>
                     <Text variant="bodyMedium">{e.name} <Text variant="caption" color="mutedForeground">· {EMPLOYEE_ROLE_LABEL[e.role]}</Text></Text>
                     <Text variant="caption" color="mutedForeground">{count} open job{count === 1 ? '' : 's'} · {loc ? `seen ${formatDistanceToNowStrict(new Date(loc.captured_at), { addSuffix: true })}` : 'no location'}</Text>
@@ -126,7 +129,7 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text variant="overline" color="mutedForeground">Upcoming jobs</Text>
+        <SectionHeader title="Upcoming jobs" count={upcoming.length} />
         {jobs.isPending ? <View style={styles.list}><SkeletonCard /><SkeletonCard /></View>
           : jobs.isError && !jobs.data ? <EmptyState icon={WifiOff} title="Couldn't load jobs" message={jobs.error.message} />
           : upcoming.length === 0 ? <EmptyState icon={Inbox} title="No open jobs" message="Everything is done. New jobs show up here." />
@@ -139,33 +142,25 @@ export default function DashboardScreen() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, color, loading, index }: { icon: ComponentType<{ size?: number; color?: string }>; label: string; value: number; color: string; loading: boolean; index: number }) {
+function Kpi({ icon, label, value, loading, index }: { icon: ComponentType<{ size?: number; color?: string }>; label: string; value: number; loading: boolean; index: number }) {
   const { enterUp } = useMotion();
   return (
     <Animated.View entering={enterUp(index)} style={styles.kpi}>
-      <Card style={styles.kpiCard} accessible accessibilityLabel={`${label}: ${value}`}>
-        <View style={[styles.kpiIcon, { backgroundColor: withAlpha(color, 0.12) }]}><Icon size={18} color={color} /></View>
-        <View style={styles.grow}>
-          {loading ? <Skeleton width={36} height={22} /> : <Text variant="title">{value}</Text>}
-          <Text variant="caption" color="mutedForeground">{label}</Text>
-        </View>
-      </Card>
+      <HeroStat icon={icon} value={loading ? '–' : value} label={label} />
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
-  kpi: { flexBasis: '47%', flexGrow: 1 },
-  kpiCard: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3] },
-  kpiIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  kpis: { flexDirection: 'row', gap: spacing[2] },
+  kpi: { flex: 1 },
   grow: { flex: 1, minWidth: 0 },
-  section: { gap: spacing[2] },
+  section: { gap: spacing[3] },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   filters: { flexDirection: 'row', gap: spacing[2] },
   list: { gap: spacing[3] },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: spacing[1] },
   selectedHead: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   selectedActions: { flexDirection: 'row', gap: spacing[2], marginTop: spacing[2] },
-  rosterRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingHorizontal: spacing[3], paddingVertical: spacing[3] },
+  rosterRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3] },
 });

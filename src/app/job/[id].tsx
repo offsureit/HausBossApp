@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Activity, Camera, Clock, FileText, Info, LogIn, LogOut, Mail, MapPin, MessageSquare, MessageSquareText, Navigation, Phone, StickyNote, UserCog, CheckCircle2 } from 'lucide-react-native';
+import { Activity, AlertTriangle, Camera, CheckCircle2, ClipboardList, Clock, FileText, Info, LogIn, LogOut, Mail, MapPin, MessageSquare, MessageSquareText, Navigation, Phone, Receipt, StickyNote, UserCog, UserRound, Wrench } from 'lucide-react-native';
 import { jobNumber } from '@/services/adapters/jobAdapter';
 import { getContractorColor } from '@/utils/contractorColors';
 import { formatLength } from '@/components/calendarLayout';
 import { fullName, matchesAssignedName } from '@/utils/names';
-import { scheduleWindow } from '@/utils/schedule';
+import { lateLabel, runningLate, scheduleWindow } from '@/utils/schedule';
 import type { Job, JobStatus } from '@/types';
 import { Confetti } from '~/components/motion/Confetti';
 import { EstimateList } from '~/components/jobs/EstimateList';
@@ -20,7 +20,7 @@ import { OnMyWaySheet } from '~/components/jobs/OnMyWaySheet';
 import { LocationPermissionSheet } from '~/components/location/LocationPermissionSheet';
 import { ReassignSheet } from '~/components/jobs/ReassignSheet';
 import { primaryActionFor } from '~/components/jobs/primaryAction';
-import { Button, Card, EmptyState, IconButton, Skeleton, StatusBadge, Tabs, Text } from '~/components/ui';
+import { Button, EmptyState, GradientBackdrop, HERO_TEXT_MUTED, IconButton, InfoRow, SectionCard, Skeleton, StatusBadge, Tabs, Text, Timeline } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useClockActions } from '~/features/jobs/useClockActions';
@@ -33,7 +33,7 @@ import { backgroundLocation } from '~/services/backgroundLocation';
 import { locationsService } from '~/services/locations';
 import { messagesService } from '~/services/messages';
 import { useTheme } from '~/theme/ThemeProvider';
-import { fontFamily, radius, spacing, withAlpha } from '~/theme/tokens';
+import { fieldSurface, fontFamily, radius, spacing, withAlpha } from '~/theme/tokens';
 
 type Tab = 'details' | 'time' | 'media' | 'chat' | 'estimates' | 'activity' | 'notes';
 const TABS: { value: Tab; label: string; icon: typeof Info }[] = [
@@ -107,27 +107,33 @@ export default function JobScreen() {
   }
 
   const unit = job.businessUnitId ? company?.businessUnits.find((u) => u.id === job.businessUnitId) : null;
+  const lateSince = runningLate(job);
   const PrimaryIcon = primary?.icon ?? CheckCircle2;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: job.clientName, headerBackTitle: 'Back', headerRight: isStaff ? () => <IconButton icon={UserCog} label="Reassign" onPress={() => setReassign(true)} /> : undefined }} />
+      <Stack.Screen options={{ title: 'Job details', headerBackTitle: 'Back', headerRight: isStaff ? () => <IconButton icon={UserCog} label="Reassign" onPress={() => setReassign(true)} /> : undefined }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" stickyHeaderIndices={[1]}>
         <View style={styles.pad}>
           <Confetti burst={burst} />
-          <View style={styles.badges}>
-            <Text variant="mono" color="mutedForeground">#{jobNumber(job.id)}</Text>
-            <StatusBadge status={job.status} />
-            {job.priority && job.priority !== 'medium' ? <View style={[styles.priority, { borderColor: colors.border }]}><Text variant="caption" color="mutedForeground">{job.priority}</Text></View> : null}
-          </View>
-          <Text variant="display">{job.clientName}</Text>
-          <View style={styles.metaRow}><Clock size={14} color={colors.mutedForeground} /><Text variant="small" color="mutedForeground">{scheduleWindow(job.scheduledDate, job.durationMinutes)}</Text></View>
-          <View style={styles.metaRow}><View style={[styles.dot, { backgroundColor: getContractorColor(assignee?.name ?? job.assignedTo, assignee?.color) }]} /><Text variant="small" color="mutedForeground">{assignee?.name || job.assignedTo || 'Unassigned'}</Text></View>
-          <View style={styles.quick}>
+          {/* Hero card: the brand gradient with the job's identity and the quick actions. */}
+          <View style={styles.heroCard}>
+            <GradientBackdrop rounded={radius.xxl} />
+            <View style={styles.badges}>
+              <Text variant="mono" color={HERO_TEXT_MUTED}>#{jobNumber(job.id)}</Text>
+              <StatusBadge status={job.status} />
+              {job.priority && job.priority !== 'medium' ? <View style={styles.heroChip}><Text variant="caption" color="#ffffff">{job.priority}</Text></View> : null}
+            </View>
+            <Text variant="display" color="#ffffff">{job.clientName}</Text>
+            <View style={styles.metaRow}><Clock size={14} color={HERO_TEXT_MUTED} /><Text variant="small" color={HERO_TEXT_MUTED}>{scheduleWindow(job.scheduledDate, job.durationMinutes)}</Text></View>
+            <View style={styles.metaRow}><View style={[styles.dot, { backgroundColor: getContractorColor(assignee?.name ?? job.assignedTo, assignee?.color) }]} /><Text variant="small" color={HERO_TEXT_MUTED}>{assignee?.name || job.assignedTo || 'Unassigned'}</Text></View>
+            {lateSince ? <View style={styles.heroLate}><AlertTriangle size={14} color="#ffffff" /><Text variant="caption" color="#ffffff" style={styles.strong}>{lateLabel(lateSince)}</Text></View> : null}
+            <View style={styles.quick}>
             {job.clientPhone ? <QuickAction icon={Phone} label="Call" onPress={() => void links.call(job.clientPhone)} /> : null}
             {job.clientPhone ? <QuickAction icon={MessageSquareText} label="Text" onPress={() => void links.sms(job.clientPhone)} /> : null}
             {job.clientAddress ? <QuickAction icon={Navigation} label="Navigate" onPress={() => void links.navigate(job.clientAddress)} /> : null}
             {job.clientEmail ? <QuickAction icon={Mail} label="Email" onPress={() => void links.email(job.clientEmail)} /> : null}
+            </View>
           </View>
           {isStaff ? <JobStatusStepper status={job.status} isStaff onChange={(s) => void move(s)} disabled={busy === 'status'} /> : null}
           {isContractor && isAssignee && primary?.kind ? (
@@ -138,37 +144,41 @@ export default function JobScreen() {
         <View style={styles.pad}>
           {tab === 'details' ? (
             <View style={styles.section}>
-              <Card style={styles.section}>
-                <Text variant="heading">{[job.clientSalutation, job.clientName].filter(Boolean).join(' ')}</Text>
-                <ContactLine icon={Phone} value={job.clientPhone} label={job.clientPhoneType} onPress={() => void links.call(job.clientPhone)} />
-                <ContactLine icon={Phone} value={job.clientPhone2} label={job.clientPhone2Type} onPress={() => void links.call(job.clientPhone2)} />
-                <ContactLine icon={Mail} value={job.clientEmail} label={job.clientEmailType} onPress={() => void links.email(job.clientEmail)} />
-                <ContactLine icon={Mail} value={job.clientEmail2} label={job.clientEmail2Type} onPress={() => void links.email(job.clientEmail2)} />
-                <ContactLine icon={MapPin} value={job.clientAddress} onPress={() => void links.navigate(job.clientAddress)} />
-              </Card>
+              <SectionCard title={[job.clientSalutation, job.clientName].filter(Boolean).join(' ')} subtitle="Customer" icon={UserRound} flush>
+                {contactRows([
+                  { icon: Phone, label: `Phone${job.clientPhoneType ? ` · ${job.clientPhoneType}` : ''}`, value: job.clientPhone, onPress: () => void links.call(job.clientPhone) },
+                  { icon: Phone, label: `Second phone${job.clientPhone2Type ? ` · ${job.clientPhone2Type}` : ''}`, value: job.clientPhone2, onPress: () => void links.call(job.clientPhone2) },
+                  { icon: Mail, label: `Email${job.clientEmailType ? ` · ${job.clientEmailType}` : ''}`, value: job.clientEmail, onPress: () => void links.email(job.clientEmail) },
+                  { icon: Mail, label: `Second email${job.clientEmail2Type ? ` · ${job.clientEmail2Type}` : ''}`, value: job.clientEmail2, onPress: () => void links.email(job.clientEmail2) },
+                  { icon: MapPin, label: 'Service address', value: job.clientAddress, onPress: () => void links.navigate(job.clientAddress) },
+                ])}
+              </SectionCard>
               {job.billingName || job.billingAddress || job.billingPhone || job.billingEmail ? (
-                <Card style={styles.section}>
-                  <Text variant="overline" color="mutedForeground">Billing</Text>
-                  {job.billingName ? <Text variant="small">{job.billingName}</Text> : null}
-                  <ContactLine icon={MapPin} value={job.billingAddress} />
-                  <ContactLine icon={Phone} value={job.billingPhone} onPress={() => void links.call(job.billingPhone)} />
-                  <ContactLine icon={Mail} value={job.billingEmail} onPress={() => void links.email(job.billingEmail)} />
-                </Card>
+                <SectionCard title="Billing" icon={Receipt} color={colors.success} flush>
+                  {contactRows([
+                    { icon: UserRound, label: 'Bill to', value: job.billingName },
+                    { icon: MapPin, label: 'Billing address', value: job.billingAddress },
+                    { icon: Phone, label: 'Billing phone', value: job.billingPhone, onPress: () => void links.call(job.billingPhone) },
+                    { icon: Mail, label: 'Billing email', value: job.billingEmail, onPress: () => void links.email(job.billingEmail) },
+                  ])}
+                </SectionCard>
               ) : null}
               {unit || job.division || job.serviceType || job.durationMinutes ? (
-                <View style={[styles.serviceLine, { backgroundColor: withAlpha(colors.muted, 0.6), borderColor: colors.border }]}>
-                  {unit ? <Text variant="small"><Text variant="small" color="mutedForeground">Business unit: </Text>{unit.name}</Text> : null}
-                  {job.division ? <Text variant="small"><Text variant="small" color="mutedForeground">Division: </Text>{DIVISION_LABEL[job.division]}</Text> : null}
-                  {job.serviceType ? <Text variant="small"><Text variant="small" color="mutedForeground">Service type: </Text>{job.serviceType}</Text> : null}
-                  {job.durationMinutes ? <Text variant="small"><Text variant="small" color="mutedForeground">Length: </Text>{formatLength(job.durationMinutes)}</Text> : null}
-                </View>
+                <SectionCard title="Service" icon={Wrench} color={colors.warning}>
+                  <View style={styles.facts}>
+                    {unit ? <Fact label="Business unit" value={unit.name} /> : null}
+                    {job.division ? <Fact label="Division" value={DIVISION_LABEL[job.division]} /> : null}
+                    {job.serviceType ? <Fact label="Service type" value={job.serviceType} /> : null}
+                    {job.durationMinutes ? <Fact label="Length" value={formatLength(job.durationMinutes)} /> : null}
+                    {!isStaff && job.category ? <Fact label="Category" value={job.category} /> : null}
+                  </View>
+                </SectionCard>
               ) : null}
               {isStaff ? <JobDetailsEditor job={job} employees={employees} onUpdateJob={actions.updateJob} /> : (
-                <View style={styles.section}>
-                  {job.category ? <Text variant="small"><Text variant="small" color="mutedForeground">Category: </Text>{job.category}</Text> : null}
-                  <Text variant="body">{job.jobDetails}</Text>
-                  {job.importantDetails ? <View style={[styles.important, { backgroundColor: withAlpha(colors.warning, 0.12), borderColor: withAlpha(colors.warning, 0.4) }]}><Text variant="small"><Text variant="label">Important: </Text>{job.importantDetails}</Text></View> : null}
-                </View>
+                <SectionCard title="Job description" icon={ClipboardList}>
+                  <Text variant="body">{job.jobDetails || 'No description.'}</Text>
+                  {job.importantDetails ? <View style={[styles.important, { backgroundColor: withAlpha(colors.warning, 0.1), borderColor: withAlpha(colors.warning, 0.35) }]}><AlertTriangle size={16} color={colors.warning} /><Text variant="small" style={styles.grow}><Text variant="label" color="warning">Important: </Text>{job.importantDetails}</Text></View> : null}
+                </SectionCard>
               )}
             </View>
           ) : null}
@@ -176,26 +186,26 @@ export default function JobScreen() {
             <View style={styles.section}>
               <JobTimer entries={job.timeEntries} showBreakdown plannedMinutes={job.durationMinutes ?? null} />
               {canControlTime && job.status !== 'completed' ? (
-                <View style={styles.quick}>
+                <View style={styles.timeActions}>
                   {clock.isActive ? (
                     <>
-                      <Button label="Clock out" variant="outline" icon={<LogOut size={18} color={colors.foreground} />} onPress={clock.clockOut} disabled={clock.busy} />
-                      <Button label="Complete job" icon={<CheckCircle2 size={18} color={colors.accentForeground} />} onPress={clock.complete} loading={clock.busy} />
+                      <Button label="Clock out" variant="outline" size="lg" style={styles.grow} icon={<LogOut size={18} color={colors.foreground} />} onPress={clock.clockOut} disabled={clock.busy} />
+                      <Button label="Complete job" size="lg" style={styles.grow} icon={<CheckCircle2 size={18} color={colors.accentForeground} />} onPress={clock.complete} loading={clock.busy} />
                     </>
-                  ) : <Button label="Clock in" icon={<LogIn size={18} color={colors.accentForeground} />} onPress={clock.clockIn} loading={clock.busy} />}
+                  ) : <Button label="Clock in" size="lg" style={styles.grow} icon={<LogIn size={18} color={colors.accentForeground} />} onPress={clock.clockIn} loading={clock.busy} />}
                 </View>
               ) : null}
-              {job.status === 'completed' ? <Text variant="small" color="mutedForeground">This job is completed; time is no longer accruing.</Text> : null}
+              {job.status === 'completed' ? <View style={[styles.notice, { backgroundColor: withAlpha(colors.success, 0.1) }]}><CheckCircle2 size={16} color={colors.success} /><Text variant="small" color="success" style={styles.grow}>This job is completed; time is no longer accruing.</Text></View> : null}
               {job.timeEntries.length > 0 ? (
-                <Card>
-                  <Text variant="overline" color="mutedForeground">Entries ({job.timeEntries.length})</Text>
-                  {[...job.timeEntries].reverse().map((e, i) => (
-                    <View key={`${e.timestamp}-${i}`} style={styles.entry}>
-                      <Text variant="small" style={styles.grow}>{e.type}{e.notes ? ` — ${e.notes}` : ''}</Text>
-                      <Text variant="caption" color="mutedForeground">{new Date(e.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</Text>
-                    </View>
-                  ))}
-                </Card>
+                <SectionCard title="Time entries" subtitle={`${job.timeEntries.length} entr${job.timeEntries.length === 1 ? 'y' : 'ies'}`} icon={Clock}>
+                  <Timeline items={[...job.timeEntries].reverse().map((e, i) => ({
+                    key: `${e.timestamp}-${i}`,
+                    title: ENTRY_LABEL[e.type] ?? e.type,
+                    meta: `${new Date(e.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${e.notes ? ` · ${e.notes}` : ''}`,
+                    color: e.type === 'start' ? colors.success : e.type === 'complete' ? colors.accent : colors.warning,
+                    icon: e.type === 'start' ? LogIn : e.type === 'complete' ? CheckCircle2 : LogOut,
+                  }))} />
+                </SectionCard>
               ) : null}
             </View>
           ) : null}
@@ -216,28 +226,34 @@ export default function JobScreen() {
 }
 
 function QuickAction({ icon: Icon, label, onPress }: { icon: typeof Phone; label: string; onPress: () => void }) {
-  const { colors } = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={[styles.quickAction, { backgroundColor: withAlpha(colors.accent, 0.1) }]}>
-      <Icon size={18} color={colors.accent} />
-      <Text variant="caption" color="accent">{label}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.quickAction, pressed && { opacity: 0.7 }]}>
+      <View style={styles.quickIcon}><Icon size={20} color="#ffffff" /></View>
+      <Text variant="caption" color="#ffffff" style={styles.strong}>{label}</Text>
     </Pressable>
   );
 }
 
-function ContactLine({ icon: Icon, value, label, onPress }: { icon: typeof Phone; value: string; label?: string; onPress?: () => void }) {
+const ENTRY_LABEL: Record<string, string> = { start: 'Clocked in', stop: 'Clocked out', complete: 'Completed' };
+
+/** InfoRows for the values that are present (empty ones are skipped; the first gets no divider). */
+function contactRows(rows: { icon: typeof Phone; label: string; value: string | null | undefined; onPress?: () => void }[]) {
+  return rows.filter((r) => !!r.value).map((r, i) => <InfoRow key={`${r.label}-${i}`} first={i === 0} icon={r.icon} label={r.label} value={r.value as string} onPress={r.onPress} />);
+}
+
+/** A small labelled fact chip (service details). */
+function Fact({ label, value }: { label: string; value: string }) {
   const { colors } = useTheme();
-  if (!value) return null;
   return (
-    <Pressable accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} disabled={!onPress} style={styles.contact}>
-      <Icon size={16} color={colors.mutedForeground} />
-      <Text variant="small" color={onPress ? 'accent' : 'foreground'} style={styles.grow}>{value}{label ? <Text variant="caption" color="mutedForeground"> ({label})</Text> : null}</Text>
-    </Pressable>
+    <View style={[styles.fact, { backgroundColor: colors.muted }]}>
+      <Text variant="caption" color="mutedForeground">{label}</Text>
+      <Text variant="bodyMedium">{value}</Text>
+    </View>
   );
 }
 
 function NotesTab({ job, onUpdateJob, senderName, userId }: { job: Job; onUpdateJob: (jobId: string, patch: Partial<Job>) => Promise<boolean>; senderName: string; userId?: string }) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const [draft, setDraft] = useState(job.notes ?? '');
   const [saving, setSaving] = useState(false);
   const unchanged = draft.trim() === (job.notes ?? '').trim();
@@ -255,11 +271,10 @@ function NotesTab({ job, onUpdateJob, senderName, userId }: { job: Job; onUpdate
     if (ok) toast.success('Notes saved');
   };
   return (
-    <View style={styles.section}>
-      <Text variant="label">Job notes</Text>
-      <TextInput accessibilityLabel="Job notes" value={draft} onChangeText={setDraft} multiline placeholder="Internal notes about this job. Saved notes are also posted to the chat thread." placeholderTextColor={colors.mutedForeground} textAlignVertical="top" style={[styles.notes, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.card }]} />
-      <Button label="Save notes" onPress={() => void save()} disabled={unchanged} loading={saving} />
-    </View>
+    <SectionCard title="Job notes" subtitle="Saved notes are also posted to the team chat" icon={StickyNote} color={colors.warning}>
+      <TextInput accessibilityLabel="Job notes" value={draft} onChangeText={setDraft} multiline placeholder="Internal notes about this job…" placeholderTextColor={colors.mutedForeground} textAlignVertical="top" style={[styles.notes, fieldSurface(colors, scheme), { color: colors.foreground }]} />
+      <Button label="Save notes" size="lg" fullWidth onPress={() => void save()} disabled={unchanged} loading={saving} />
+    </SectionCard>
   );
 }
 
@@ -271,13 +286,21 @@ const styles = StyleSheet.create({
   priority: { borderRadius: radius.full, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: spacing[2], paddingVertical: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
-  quickAction: { flexGrow: 1, flexBasis: 70, alignItems: 'center', gap: 4, paddingVertical: spacing[2], borderRadius: radius.md, minHeight: 56, justifyContent: 'center' },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] },
+  quickAction: { flexGrow: 1, flexBasis: 64, alignItems: 'center', gap: 6, paddingVertical: spacing[1], minHeight: 56, justifyContent: 'center' },
+  quickIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.22)', borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  heroCard: { borderRadius: radius.xxl, padding: spacing[5], gap: spacing[2], overflow: 'hidden' },
+  heroChip: { borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.16)', paddingHorizontal: spacing[2], paddingVertical: 2 },
+  heroLate: { flexDirection: 'row', alignItems: 'center', gap: spacing[1], alignSelf: 'flex-start', backgroundColor: 'rgba(220,38,38,0.85)', borderRadius: radius.full, paddingHorizontal: spacing[3], paddingVertical: 4 },
+  strong: { fontFamily: fontFamily.semibold },
   section: { gap: spacing[3] },
-  contact: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   grow: { flex: 1, minWidth: 0 },
   serviceLine: { borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3], gap: 2 },
-  important: { borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3] },
+  important: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2], borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3] },
+  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  fact: { flexGrow: 1, flexBasis: '45%', borderRadius: radius.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2], gap: 2 },
+  timeActions: { flexDirection: 'row', gap: spacing[2] },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], borderRadius: radius.md, padding: spacing[3] },
   entry: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[2], paddingVertical: 4 },
-  notes: { minHeight: 140, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: radius.md, padding: spacing[3], fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 22 },
+  notes: { minHeight: 160, borderRadius: radius.lg - 4, padding: spacing[4], fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 22 },
 });

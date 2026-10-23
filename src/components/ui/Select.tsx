@@ -4,7 +4,7 @@ import { Check, ChevronDown } from 'lucide-react-native';
 import { Sheet } from './Sheet';
 import { Text } from './Text';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing, touchTarget, withAlpha } from '~/theme/tokens';
+import { fieldSurface, fontFamily, radius, spacing, touchTarget, withAlpha } from '~/theme/tokens';
 
 export interface SelectOption<T extends string> {
   value: T;
@@ -29,19 +29,19 @@ export interface SelectProps<T extends string> {
 
 /** Native-feeling picker: a field that opens the options in a bottom sheet. */
 export function Select<T extends string>({ label, value, options, onChange, placeholder = 'Select', disabled, hint, error, extra }: SelectProps<T>) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.value === value);
   return (
     <View style={styles.wrap}>
-      <Text variant="label">{label}</Text>
+      <Text variant="label" style={styles.label}>{label}</Text>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${current?.label ?? placeholder}`}
         accessibilityState={{ disabled: !!disabled }}
         disabled={disabled}
         onPress={() => setOpen(true)}
-        style={[styles.field, { borderColor: error ? colors.destructive : colors.input, backgroundColor: disabled ? colors.muted : colors.card }, disabled && { opacity: 0.8 }]}
+        style={[styles.field, fieldSurface(colors, scheme, { error: !!error, disabled: !!disabled }), disabled && { opacity: 0.8 }]}
       >
         {current?.leading ? <View style={styles.leading}>{current.leading}</View> : null}
         <Text variant="body" color={current ? 'foreground' : 'mutedForeground'} style={styles.value} numberOfLines={1}>{current?.label ?? placeholder}</Text>
@@ -69,8 +69,9 @@ export function Select<T extends string>({ label, value, options, onChange, plac
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing[1] },
-  field: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], minHeight: touchTarget + 4, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: radius.md, paddingHorizontal: spacing[3] },
+  wrap: { gap: 6 },
+  label: { fontFamily: fontFamily.semibold, fontSize: 13, lineHeight: 18 },
+  field: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], minHeight: touchTarget + 8, borderRadius: radius.lg - 4, paddingHorizontal: spacing[4] },
   leading: { marginRight: spacing[1] },
   value: { flex: 1, minWidth: 0 },
   option: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], minHeight: touchTarget + 4, paddingHorizontal: spacing[3], borderRadius: radius.md },

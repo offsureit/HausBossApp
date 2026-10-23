@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { Camera, ImageIcon, MapPin, Trash2, Video, X } from 'lucide-react-native';
+import { Camera, CheckCircle2, ImageIcon, Images, MapPin, Plus, Trash2, Video, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { gpsMapLink, groupMedia, isVideo } from '@/utils/media';
 import type { Job, MediaItem } from '@/types';
 import { resolveMediaUrl } from '~/lib/env';
-import { Button, Dialog, IconButton, Text } from '~/components/ui';
+import { Button, Dialog, IconButton, SectionCard, Text } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { pickMedia, useMediaUpload } from '~/features/media/useMediaUpload';
 import { toast } from '~/features/toast/store';
@@ -25,7 +25,8 @@ export function MediaSection({ job, onChanged }: { job: Job; onChanged?: () => v
   const [confirmDelete, setConfirmDelete] = useState<MediaItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const media = useMemo(() => groupMedia(job.mediaUrls ?? []), [job.mediaUrls]);
-  const tile = (width - spacing[4] * 2 - spacing[2] * 2) / 3;
+  // Three tiles per row inside a section card (page padding + card padding on both sides).
+  const tile = (width - spacing[4] * 2 - spacing[4] * 2 - spacing[2] * 2) / 3;
 
   const add = async (source: 'camera' | 'library') => {
     const items = await pickMedia(source, { multiple: true });
@@ -49,13 +50,17 @@ export function MediaSection({ job, onChanged }: { job: Job; onChanged?: () => v
   return (
     <View style={styles.wrap}>
       <View style={styles.actions}>
-        <Button label="Take photo" icon={<Camera size={18} color={colors.accentForeground} />} onPress={() => void add('camera')} loading={uploading} style={styles.grow} />
-        <Button label="Choose" variant="outline" icon={<ImageIcon size={18} color={colors.foreground} />} onPress={() => void add('library')} disabled={uploading} style={styles.grow} />
+        <Button label="Take photo" size="lg" icon={<Camera size={18} color={colors.accentForeground} />} onPress={() => void add('camera')} loading={uploading} style={styles.grow} />
+        <Button label="Choose" size="lg" variant="outline" icon={<ImageIcon size={18} color={colors.foreground} />} onPress={() => void add('library')} disabled={uploading} style={styles.grow} />
       </View>
-      {([['Pre-Job', media.pre], ['Post-Job', media.post], ['Other', media.other]] as const).map(([title, items]) => (
-        <View key={title} style={styles.group}>
-          <Text variant="label">{title} <Text variant="caption" color="mutedForeground">({items.length})</Text></Text>
-          {items.length === 0 ? <Text variant="caption" color="mutedForeground">Nothing yet.</Text> : (
+      {([['Pre-Job', 'Before the work starts', Camera, colors.accent, media.pre], ['Post-Job', 'The finished work', CheckCircle2, colors.success, media.post], ['Other', 'Everything else', Images, colors.warning, media.other]] as const).map(([title, subtitle, icon, color, items]) => (
+        <SectionCard key={title} title={title} subtitle={`${subtitle} · ${items.length} file${items.length === 1 ? '' : 's'}`} icon={icon} color={color}>
+          {items.length === 0 ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={`Add a ${title} photo`} onPress={() => void add('camera')} disabled={uploading} style={[styles.addTile, { width: tile, height: tile, borderColor: colors.border, backgroundColor: colors.field }]}>
+              <Plus size={22} color={colors.mutedForeground} />
+              <Text variant="caption" color="mutedForeground">Add photo</Text>
+            </Pressable>
+          ) : (
             <View style={styles.grid}>
               {items.map((m, i) => (
                 <Pressable key={m.path || m.url} accessibilityRole="imagebutton" accessibilityLabel={`Open ${m.name}`} onPress={() => setViewer({ items: [...items], index: i })} style={[styles.tile, { width: tile, height: tile, backgroundColor: colors.muted }]}>
@@ -65,7 +70,7 @@ export function MediaSection({ job, onChanged }: { job: Job; onChanged?: () => v
               ))}
             </View>
           )}
-        </View>
+        </SectionCard>
       ))}
 
       {viewer ? <PhotoViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} onDelete={canDelete(viewer.items[viewer.index]) ? (item) => setConfirmDelete(item) : undefined} /> : null}
@@ -124,7 +129,7 @@ const styles = StyleSheet.create({
   wrap: { gap: spacing[4] },
   actions: { flexDirection: 'row', gap: spacing[2] },
   grow: { flex: 1 },
-  group: { gap: spacing[2] },
+  addTile: { borderRadius: radius.md, borderWidth: 1.5, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   tile: { borderRadius: radius.md, overflow: 'hidden' },
   videoTile: { flex: 1, alignItems: 'center', justifyContent: 'center' },

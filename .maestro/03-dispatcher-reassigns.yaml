@@ -14,9 +14,15 @@ env:
 # Staff tabs: Dashboard instead of Today.
 - assertVisible: "Dashboard"
 - tapOn: "Dashboard"
+# The dashboard opens on a tall gradient header: wait for it, then scroll the roster into view.
 - extendedWaitUntil:
     visible:
+      text: "Live map"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
       text: "Employees"
+    direction: DOWN
     timeout: 20000
 - scrollUntilVisible:
     element:
@@ -29,12 +35,15 @@ env:
     visible:
       text: "Open jobs.*"
     timeout: 10000
-- assertVisible: "Maestro Reassign"
+# Each open job's Reassign button is labelled with the customer ("Reassign Maestro Reassign").
+- scrollUntilVisible:
+    element:
+      text: "Reassign Maestro Reassign"
+    direction: DOWN
+    centerElement: true
+    timeout: 20000
 - takeScreenshot: maestro-03-employee-sheet
-# Open jobs are listed earliest first: Maestro Fixture, Maestro Reassign, Maestro Offline → index 1.
-- tapOn:
-    text: "Reassign"
-    index: 1
+- tapOn: "Reassign Maestro Reassign"
 - extendedWaitUntil:
     visible:
       text: "Reassign job"
@@ -52,8 +61,11 @@ env:
     index: 0
 # The sheet closes on success ("Reassigned to …" toast) and the roster counts move:
 # the technician loses one open job. run.sh then checks the server row points at the manager.
-- extendedWaitUntil:
-    visible:
-      text: "${TECH_NAME}: 2 open jobs"
+# The roster is above the job list the page was scrolled to.
+# The roster row updates live (the exact count depends on the other demo jobs; run.sh checks the server row).
+- scrollUntilVisible:
+    element:
+      text: "${TECH_NAME}: \\d+ open jobs?"
+    direction: DOWN
     timeout: 15000
 - takeScreenshot: maestro-03-reassigned

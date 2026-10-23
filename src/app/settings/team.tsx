@@ -6,7 +6,7 @@ import { Mail, Phone, UserPlus, Users } from 'lucide-react-native';
 import { getContractorColor } from '@/utils/contractorColors';
 import { EMPLOYEE_ROLE_LABEL } from '@/utils/employees';
 import type { AppRole, Employee } from '@/types';
-import { Avatar, Button, Card, Dialog, EmptyState, IconButton, Screen, Select, Sheet, SkeletonCard, Text, TextField } from '~/components/ui';
+import { Avatar, Button, Card, Dialog, EmptyState, HeroIconButton, IconButton, Screen, Select, Sheet, SkeletonCard, Text, TextField } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { teamKey, useTeamQuery } from '~/features/team/useTeam';
@@ -70,21 +70,29 @@ export default function TeamScreen() {
 
   return (
     <Screen scroll edges={['left', 'right']} refreshing={team.isRefetching} onRefresh={() => void team.refetch()} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Team', headerBackTitle: 'Back', headerRight: isAdmin ? () => <IconButton icon={UserPlus} label="Invite" variant="filled" tone="accent" onPress={() => setInviteOpen(true)} /> : undefined }} />
+      <Stack.Screen options={{ title: 'Team', headerBackTitle: 'Back', headerRight: isAdmin ? () => <HeroIconButton icon={UserPlus} label="Invite" onPress={() => setInviteOpen(true)} /> : undefined }} />
       {team.isPending ? <View style={styles.list}><SkeletonCard /><SkeletonCard /></View>
         : people.length === 0 ? <EmptyState icon={Users} title="No team members yet" />
         : (
           <Card padded={false}>
             {people.map((e, i) => (
               <View key={e.id} style={[styles.row, i > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                <Avatar name={e.name} firstName={e.firstName} lastName={e.lastName} color={getContractorColor(e.name, e.color)} size={40} />
+                <Avatar name={e.name} firstName={e.firstName} lastName={e.lastName} color={getContractorColor(e.name, e.color)} size={44} />
                 <View style={styles.grow}>
-                  <Text variant="bodyMedium">{e.name}{e.id === user?.id ? <Text variant="caption" color="mutedForeground"> · you</Text> : null}{!e.isActive ? <Text variant="caption" color="destructive"> · inactive</Text> : null}</Text>
-                  <Text variant="caption" color="mutedForeground">{EMPLOYEE_ROLE_LABEL[e.role]}{e.email ? ` · ${e.email}` : ''}</Text>
+                  <Text variant="bodyMedium" style={styles.strong}>{e.name}{e.id === user?.id ? <Text variant="caption" color="mutedForeground"> · you</Text> : null}</Text>
+                  {e.email ? <Text variant="caption" color="mutedForeground" numberOfLines={1}>{e.email}</Text> : null}
+                  <View style={styles.pills}>
+                    <View style={[styles.pill, { backgroundColor: withAlpha(colors.accent, 0.1) }]}><Text variant="caption" color="accent" style={styles.strong}>{EMPLOYEE_ROLE_LABEL[e.role]}</Text></View>
+                    {!e.isActive ? <View style={[styles.pill, { backgroundColor: withAlpha(colors.destructive, 0.1) }]}><Text variant="caption" color="destructive" style={styles.strong}>Inactive</Text></View> : null}
+                  </View>
                 </View>
-                {e.phone ? <IconButton icon={Phone} label={`Call ${e.name}`} onPress={() => void links.call(e.phone)} /> : null}
-                {e.email ? <IconButton icon={Mail} label={`Email ${e.name}`} onPress={() => void links.email(e.email)} /> : null}
-                {isAdmin && e.id !== user?.id ? <Button label="Manage" variant="outline" size="sm" onPress={() => setSelected(e)} /> : null}
+                <View style={styles.side}>
+                  <View style={styles.contact}>
+                    {e.phone ? <IconButton icon={Phone} label={`Call ${e.name}`} variant="filled" tone="accent" size={36} onPress={() => void links.call(e.phone)} /> : null}
+                    {e.email ? <IconButton icon={Mail} label={`Email ${e.name}`} variant="filled" tone="accent" size={36} onPress={() => void links.email(e.email)} /> : null}
+                  </View>
+                  {isAdmin && e.id !== user?.id ? <Button label="Manage" variant="secondary" size="sm" onPress={() => setSelected(e)} /> : null}
+                </View>
               </View>
             ))}
           </Card>
@@ -116,9 +124,14 @@ export default function TeamScreen() {
 }
 
 const styles = StyleSheet.create({
+  strong: { fontFamily: 'Inter_600SemiBold' },
+  pills: { flexDirection: 'row', gap: spacing[1], marginTop: 4 },
+  pill: { borderRadius: 999, paddingHorizontal: spacing[2], paddingVertical: 2 },
+  side: { alignItems: 'flex-end', gap: spacing[2] },
+  contact: { flexDirection: 'row', gap: spacing[1] },
   content: { gap: spacing[3] },
   list: { gap: spacing[2] },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingVertical: spacing[2], paddingHorizontal: spacing[3], minHeight: 60 },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3] },
   rowFields: { flexDirection: 'row', gap: spacing[2], alignItems: 'flex-start' },
   grow: { flex: 1, minWidth: 0, gap: 2 },
   note: { borderRadius: radius.md, padding: spacing[3] },

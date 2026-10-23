@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Paperclip, Send, StickyNote, X } from 'lucide-react-native';
+import { MessagesSquare, Paperclip, Send, StickyNote, X } from 'lucide-react-native';
 import { getContractorColor, getContrastText } from '@/utils/contractorColors';
 import { fullName } from '@/utils/names';
 import { isVideo } from '@/utils/media';
@@ -17,11 +17,11 @@ import { timeAgo } from '~/lib/time';
 import { messagesService } from '~/services/messages';
 import type { MediaUploadItem } from '~/services/media';
 import { useTheme } from '~/theme/ThemeProvider';
-import { fontFamily, radius, spacing, withAlpha } from '~/theme/tokens';
+import { fieldSurface, fontFamily, radius, spacing, withAlpha } from '~/theme/tokens';
 
 /** Realtime per-job thread with attachments and per-user colours (§2, §11). */
 export function JobChat({ jobId }: { jobId: string }) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const { user, profile } = useAuth();
   const { messages, loading, error, sending, send } = useJobMessages(jobId);
   const { upload, uploading } = useMediaUpload();
@@ -54,7 +54,7 @@ export function JobChat({ jobId }: { jobId: string }) {
       {loading && messages.length === 0 ? (
         <View style={styles.list}><Skeleton width="60%" height={40} /><Skeleton width="70%" height={40} style={styles.right} /><Skeleton width="50%" height={40} /></View>
       ) : messages.length === 0 ? (
-        <View style={styles.list}><EmptyState icon={StickyNote} title="No messages yet" message={error ?? 'Start the conversation with the team.'} /></View>
+        <View style={styles.list}><EmptyState icon={MessagesSquare} title="No messages yet" tone="accent" message={error ?? 'Start the conversation with the team.'} /></View>
       ) : (
         <View style={styles.list} accessibilityRole="list">
           {messages.map((m) => {
@@ -64,7 +64,7 @@ export function JobChat({ jobId }: { jobId: string }) {
             if (m.is_from_note) {
               return (
                 <View key={m.id} style={[styles.note, { backgroundColor: withAlpha(colors.warning, 0.12), borderColor: withAlpha(colors.warning, 0.4) }]}>
-                  <View style={styles.noteHead}><StickyNote size={12} color={colors.warningForeground} /><Text variant="caption" color="mutedForeground">Note from {m.sender_name} · {timeAgo(m.created_at)}</Text></View>
+                  <View style={styles.noteHead}><StickyNote size={12} color={colors.warning} /><Text variant="caption" color="mutedForeground">Note from {m.sender_name} · {timeAgo(m.created_at)}</Text></View>
                   <Text variant="small">{m.content}</Text>
                 </View>
               );
@@ -102,8 +102,9 @@ export function JobChat({ jobId }: { jobId: string }) {
           ))}
         </View>
       ) : null}
-      <View style={[styles.composer, { borderTopColor: colors.border }]}>
-        <IconButton icon={Paperclip} label="Attach files" onPress={() => void attach()} disabled={uploading || sending} />
+      {/* Composer: a rounded bar with attach, the growing input and a round send button. */}
+      <View style={[styles.composer, fieldSurface(colors, scheme), { backgroundColor: colors.card }]}>
+        <IconButton icon={Paperclip} label="Attach files" size={40} onPress={() => void attach()} disabled={uploading || sending} />
         <TextInput
           accessibilityLabel="Message"
           value={draft}
@@ -111,9 +112,9 @@ export function JobChat({ jobId }: { jobId: string }) {
           placeholder="Message…"
           placeholderTextColor={colors.mutedForeground}
           multiline
-          style={[styles.input, { color: colors.foreground, backgroundColor: colors.muted }]}
+          style={[styles.input, { color: colors.foreground }]}
         />
-        <IconButton icon={Send} label="Send message" tone="accent" variant="filled" onPress={() => void submit()} disabled={sending || uploading || (!draft.trim() && pending.length === 0)} />
+        <IconButton icon={Send} label="Send message" tone="accent" variant="solid" size={40} onPress={() => void submit()} disabled={sending || uploading || (!draft.trim() && pending.length === 0)} />
       </View>
     </View>
   );
@@ -125,8 +126,8 @@ const styles = StyleSheet.create({
   right: { alignSelf: 'flex-end' },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2] },
   rowMine: { flexDirection: 'row-reverse' },
-  avatar: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  bubble: { maxWidth: '80%', borderRadius: 16, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+  avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  bubble: { maxWidth: '80%', borderRadius: radius.lg, paddingHorizontal: spacing[3] + 2, paddingVertical: spacing[2] + 2 },
   sender: { marginBottom: 2, fontFamily: fontFamily.medium },
   attachments: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], marginTop: spacing[1] },
   attachment: { borderRadius: radius.sm, overflow: 'hidden', padding: 2 },
@@ -137,6 +138,6 @@ const styles = StyleSheet.create({
   pending: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[1], paddingVertical: spacing[1] },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: radius.full, paddingHorizontal: spacing[2], paddingVertical: 4, maxWidth: 200 },
   chipText: { flexShrink: 1 },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[1], borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing[2] },
-  input: { flex: 1, minHeight: 44, maxHeight: 120, borderRadius: radius.lg, paddingHorizontal: spacing[3], paddingVertical: spacing[2], fontFamily: fontFamily.regular, fontSize: 16 },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[1], borderRadius: radius.xl, padding: 4, marginTop: spacing[2] },
+  input: { flex: 1, minHeight: 40, maxHeight: 140, paddingHorizontal: spacing[2], paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: 16 },
 });

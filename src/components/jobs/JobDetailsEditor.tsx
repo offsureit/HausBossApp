@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarClock, FileText } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { getContractorColor } from '@/utils/contractorColors';
 import { assignableEmployees, employeeOptionLabel } from '@/utils/employees';
 import type { Employee, Job } from '@/types';
-import { Button, DateTimeField, Select, Text, TextField } from '~/components/ui';
+import { Button, DateTimeField, SectionCard, Select, Text, TextField } from '~/components/ui';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useCategories } from '~/features/jobs/useCategories';
 import type { JobPatch } from '~/features/jobs/useJobActions';
 import { toast } from '~/features/toast/store';
 import { spacing } from '~/theme/tokens';
+import { useTheme } from '~/theme/ThemeProvider';
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
 const NONE = 'none';
@@ -24,6 +26,7 @@ function combine(date: Date | null, time: Date | null): string {
 /** Staff edit of the schedule, assignee, priority, category and details (JobDetailsModal "Edit job"). */
 export function JobDetailsEditor({ job, employees, onUpdateJob }: { job: Job; employees: Employee[]; onUpdateJob: (jobId: string, patch: JobPatch) => Promise<boolean> }) {
   const { company, companyId } = useCompany();
+  const { colors } = useTheme();
   const { categories, addCategory } = useCategories(companyId);
   const people = useMemo(() => assignableEmployees(employees, { includeInactive: true }), [employees]);
   const unitCategory = (job.businessUnitId && company?.businessUnits.find((u) => u.id === job.businessUnitId)?.category) || null;
@@ -68,6 +71,7 @@ export function JobDetailsEditor({ job, employees, onUpdateJob }: { job: Job; em
 
   return (
     <View style={styles.wrap}>
+      <SectionCard title="Assignment & schedule" icon={CalendarClock}>
       <Select label="Technician" value={assignedUserId} onChange={mark(setAssignedUserId)} options={[{ value: NONE, label: 'Unassigned' }, ...people.map((t) => ({ value: t.id, label: employeeOptionLabel(t) + (t.isActive ? '' : ' (inactive)'), leading: <View style={[styles.dot, { backgroundColor: getContractorColor(t.name, t.color) }]} /> }))]} />
       <View style={styles.row}>
         <View style={styles.grow}><DateTimeField label="Date" mode="date" value={date} onChange={mark(setDate)} /></View>
@@ -90,10 +94,13 @@ export function JobDetailsEditor({ job, employees, onUpdateJob }: { job: Job; em
           }
         />
       )}
+      </SectionCard>
+      <SectionCard title="Description" icon={FileText} color={colors.warning}>
       <TextField label="Job details" value={details} onChangeText={mark(setDetails)} multiline numberOfLines={3} style={styles.multiline} />
       <TextField label="Important details" value={important} onChangeText={mark(setImportant)} multiline numberOfLines={2} style={styles.multiline} placeholder="Gate codes, pets, access…" />
-      <Button label="Save changes" fullWidth loading={saving} onPress={() => void save()} />
-      <Text variant="caption" color="mutedForeground">Changing the technician or the date notifies the people involved.</Text>
+      </SectionCard>
+      <Button label="Save changes" size="lg" fullWidth loading={saving} onPress={() => void save()} />
+      <Text variant="caption" color="mutedForeground" align="center">Changing the technician or the date notifies the people involved.</Text>
     </View>
   );
 }

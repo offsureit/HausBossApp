@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { format } from 'date-fns';
-import { Ban, Briefcase, FileText, Info, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Trash2, Undo2, UserRound, Wrench } from 'lucide-react-native';
+import { Ban, Briefcase, Building2, FileSignature, FileText, Info, Layers, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Receipt, StickyNote, Trash2, Undo2, UserRound, Wrench } from 'lucide-react-native';
 import type { Customer, CustomerEquipment, Job, ServiceAgreement } from '@/types';
 import { JobCard } from '~/components/jobs/JobCard';
-import { Button, Card, Dialog, EmptyState, IconButton, Skeleton, Tabs, Text, TextField, Toggle } from '~/components/ui';
+import { Avatar, Button, Card, Dialog, EmptyState, GradientBackdrop, HERO_TEXT_MUTED, HeroIconButton, IconButton, IconTile, InfoRow, SectionCard, Skeleton, Tabs, Text, TextField, Toggle } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useCustomersQuery } from '~/features/customers/useCustomers';
@@ -16,7 +16,7 @@ import { links } from '~/lib/links';
 import { customersService } from '~/services/customers';
 import { smsService } from '~/services/sms';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing, withAlpha } from '~/theme/tokens';
+import { radius, spacing } from '~/theme/tokens';
 
 type Tab = 'details' | 'jobs' | 'equipment' | 'agreements';
 const TABS: { value: Tab; label: string; icon: typeof Info }[] = [
@@ -137,52 +137,64 @@ export default function CustomerScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: customer.name, headerBackTitle: 'Back', headerRight: isStaff ? () => <IconButton icon={Pencil} label="Edit customer" onPress={() => router.push({ pathname: '/customers/[id]/edit', params: { id: customer.id } })} /> : undefined }} />
+      <Stack.Screen options={{ title: customer.name, headerBackTitle: 'Back', headerRight: isStaff ? () => <HeroIconButton icon={Pencil} label="Edit customer" onPress={() => router.push({ pathname: '/customers/[id]/edit', params: { id: customer.id } })} /> : undefined }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" stickyHeaderIndices={[1]}>
         <View style={styles.pad}>
-          <Text variant="display">{customer.name}</Text>
-          {customer.is_active === false ? <Text variant="caption" color="mutedForeground">Inactive customer</Text> : null}
+          {/* Profile card: the brand gradient, avatar, name and round quick actions (same family as job details). */}
+          <View style={styles.heroCard}>
+            <GradientBackdrop rounded={radius.xxl} />
+            <View style={styles.heroTop}>
+              <View style={styles.avatarRing}><Avatar name={customer.name} size={56} /></View>
+              <View style={styles.grow}>
+                <Text variant="title" color="#ffffff">{customer.name}</Text>
+                <Text variant="small" color={HERO_TEXT_MUTED}>{[unit?.name, customer.is_active === false ? 'Inactive customer' : null].filter(Boolean).join(' · ') || 'Customer'}</Text>
+              </View>
+            </View>
           <View style={styles.quick}>
             {customer.phone ? <QuickAction icon={Phone} label="Call" onPress={() => void links.call(customer.phone as string)} /> : null}
             {customer.email ? <QuickAction icon={Mail} label="Email" onPress={() => void links.email(customer.email as string)} /> : null}
             {customer.address ? <QuickAction icon={MapPin} label="Navigate" onPress={() => void links.navigate(customer.address as string)} /> : null}
             {isStaff ? <QuickAction icon={Plus} label="New job" onPress={() => router.push({ pathname: '/job/new', params: { customerId: customer.id } })} /> : null}
           </View>
+          </View>
         </View>
         <View style={{ backgroundColor: colors.background }}><Tabs value={tab} items={TABS} onChange={setTab} /></View>
         <View style={styles.pad}>
           {tab === 'details' ? (
             <View style={styles.section}>
-              <Card style={styles.section}>
-                <ContactLine icon={Phone} value={customer.phone} onPress={() => void links.call(customer.phone as string)} />
-                <ContactLine icon={Phone} value={customer.phone2} onPress={() => void links.call(customer.phone2 as string)} />
-                <ContactLine icon={Mail} value={customer.email} onPress={() => void links.email(customer.email as string)} />
-                <ContactLine icon={Mail} value={customer.email2} onPress={() => void links.email(customer.email2 as string)} />
-                <ContactLine icon={MapPin} value={customer.address} onPress={() => void links.navigate(customer.address as string)} />
-                {!customer.phone && !customer.email && !customer.address ? <Text variant="small" color="mutedForeground">No contact details.</Text> : null}
-              </Card>
+              <SectionCard title="Contact" icon={UserRound} flush>
+                {rows([
+                  { icon: Phone, label: 'Phone', value: customer.phone, onPress: () => void links.call(customer.phone as string) },
+                  { icon: Phone, label: 'Second phone', value: customer.phone2, onPress: () => void links.call(customer.phone2 as string) },
+                  { icon: Mail, label: 'Email', value: customer.email, onPress: () => void links.email(customer.email as string) },
+                  { icon: Mail, label: 'Second email', value: customer.email2, onPress: () => void links.email(customer.email2 as string) },
+                  { icon: MapPin, label: 'Service address', value: customer.address, onPress: () => void links.navigate(customer.address as string) },
+                ])}
+                {!customer.phone && !customer.email && !customer.address ? <Text variant="small" color="mutedForeground" style={styles.empty}>No contact details.</Text> : null}
+              </SectionCard>
               {customer.billing_name || customer.billing_address || customer.billing_phone || customer.billing_email ? (
-                <Card style={styles.section}>
-                  <Text variant="overline" color="mutedForeground">Billing</Text>
-                  {customer.billing_name ? <Text variant="small">{customer.billing_name}</Text> : null}
-                  <ContactLine icon={MapPin} value={customer.billing_address} />
-                  <ContactLine icon={Phone} value={customer.billing_phone} onPress={() => void links.call(customer.billing_phone as string)} />
-                  <ContactLine icon={Mail} value={customer.billing_email} onPress={() => void links.email(customer.billing_email as string)} />
-                </Card>
+                <SectionCard title="Billing" icon={Receipt} color={colors.success} flush>
+                  {rows([
+                    { icon: UserRound, label: 'Bill to', value: customer.billing_name },
+                    { icon: MapPin, label: 'Billing address', value: customer.billing_address },
+                    { icon: Phone, label: 'Billing phone', value: customer.billing_phone, onPress: () => void links.call(customer.billing_phone as string) },
+                    { icon: Mail, label: 'Billing email', value: customer.billing_email, onPress: () => void links.email(customer.billing_email as string) },
+                  ])}
+                </SectionCard>
               ) : null}
               {unit || customer.division ? (
-                <View style={[styles.serviceLine, { backgroundColor: withAlpha(colors.muted, 0.6), borderColor: colors.border }]}>
-                  {unit ? <Text variant="small"><Text variant="small" color="mutedForeground">Business unit: </Text>{unit.name}</Text> : null}
-                  {customer.division ? <Text variant="small"><Text variant="small" color="mutedForeground">Division: </Text>{DIVISION_LABEL[customer.division] ?? customer.division}</Text> : null}
-                </View>
+                <SectionCard title="Service line" icon={Building2} color={colors.warning} flush>
+                  {rows([
+                    { icon: Building2, label: 'Business unit', value: unit?.name },
+                    { icon: Layers, label: 'Division', value: customer.division ? DIVISION_LABEL[customer.division] ?? customer.division : null },
+                  ])}
+                </SectionCard>
               ) : null}
-              {customer.notes ? <Card><Text variant="overline" color="mutedForeground">Notes</Text><Text variant="body">{customer.notes}</Text></Card> : null}
-              <Card style={styles.section} accessibilityLabel="SMS consent">
-                <Text variant="bodyMedium">Text messages</Text>
+              {customer.notes ? <SectionCard title="Notes" icon={StickyNote} color={colors.warning}><Text variant="body">{customer.notes}</Text></SectionCard> : null}
+              <SectionCard title="Text messages" icon={MessageCircle} color={optedOut ? colors.destructive : colors.success} subtitle={optedOut ? 'Opted out' : 'OK to text'}>
                 <Text variant="caption" color="mutedForeground">
-                  {optedOut ? `Opted out on ${format(new Date(customer.sms_opted_out_at as string), 'MMM d, yyyy')}` : 'OK to text'}
-                  {!optedOut && customer.sms_consent_at ? ` · consent ${format(new Date(customer.sms_consent_at), 'MMM d, yyyy')}` : ''}
-                  {!textable ? ' · no valid mobile number' : ''}
+                  {optedOut ? `Since ${format(new Date(customer.sms_opted_out_at as string), 'MMM d, yyyy')}. No texts are sent until consent is restored.` : customer.sms_consent_at ? `Consent given ${format(new Date(customer.sms_consent_at), 'MMM d, yyyy')}.` : 'Appointment updates and replies by text.'}
+                  {!textable ? ' No valid mobile number.' : ''}
                 </Text>
                 {isStaff ? (
                   <View style={styles.quick}>
@@ -193,8 +205,8 @@ export default function CustomerScreen() {
                   </View>
                 ) : null}
                 {isStaff && !inbox.inPlan ? <Text variant="caption" color="mutedForeground">Texting is not included in the Individual plan.</Text> : isStaff && !inbox.configured ? <Text variant="caption" color="mutedForeground">No SMS number configured for your company.</Text> : null}
-              </Card>
-              {isAdmin ? <Button label="Delete customer" variant="ghost" icon={<Trash2 size={18} color={colors.destructive} />} onPress={() => setConfirm('delete')} disabled={!!busy} /> : null}
+              </SectionCard>
+              {isAdmin ? <Button label="Delete customer" variant="danger-ghost" size="lg" fullWidth icon={<Trash2 size={18} color={colors.destructive} />} onPress={() => setConfirm('delete')} disabled={!!busy} /> : null}
             </View>
           ) : null}
           {tab === 'jobs' ? (
@@ -205,8 +217,9 @@ export default function CustomerScreen() {
           ) : null}
           {tab === 'equipment' ? (
             <View style={styles.section}>
-              {equipment === null ? <Skeleton height={80} /> : equipment.length === 0 ? <Text variant="small" color="mutedForeground">No equipment recorded.</Text> : equipment.map((e) => (
+              {equipment === null ? <Skeleton height={80} /> : equipment.length === 0 ? <EmptyState icon={Wrench} title="No equipment recorded" message="Furnaces, condensers, water heaters… with serial numbers and warranty dates." /> : equipment.map((e) => (
                 <Card key={e.id} style={styles.itemRow}>
+                  <IconTile icon={Wrench} color={colors.warning} />
                   <View style={styles.grow}>
                     <Text variant="bodyMedium">{[e.equipment_type, e.brand, e.model].filter(Boolean).join(' · ')}</Text>
                     <Text variant="caption" color="mutedForeground">{[e.serial_number && `S/N ${e.serial_number}`, e.location, e.install_date && `Installed ${day(e.install_date)}`, e.warranty_expires && `Warranty to ${day(e.warranty_expires)}`].filter(Boolean).join(' · ')}</Text>
@@ -216,22 +229,22 @@ export default function CustomerScreen() {
                 </Card>
               ))}
               {isStaff ? (eqOpen ? (
-                <Card style={styles.section}>
-                  <Text variant="heading">Add equipment</Text>
+                <SectionCard title="Add equipment" icon={Wrench} color={colors.warning}>
                   <TextField label="Equipment type *" value={eq.equipment_type} onChangeText={(v) => setEq({ ...eq, equipment_type: v })} placeholder="e.g. Furnace" />
                   <View style={styles.row}><View style={styles.grow}><TextField label="Brand" value={eq.brand} onChangeText={(v) => setEq({ ...eq, brand: v })} /></View><View style={styles.grow}><TextField label="Model" value={eq.model} onChangeText={(v) => setEq({ ...eq, model: v })} /></View></View>
                   <View style={styles.row}><View style={styles.grow}><TextField label="Serial number" value={eq.serial_number} onChangeText={(v) => setEq({ ...eq, serial_number: v })} autoCapitalize="characters" /></View><View style={styles.grow}><TextField label="Location" value={eq.location} onChangeText={(v) => setEq({ ...eq, location: v })} /></View></View>
                   <View style={styles.row}><View style={styles.grow}><TextField label="Install date" value={eq.install_date} onChangeText={(v) => setEq({ ...eq, install_date: v })} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" /></View><View style={styles.grow}><TextField label="Warranty expires" value={eq.warranty_expires} onChangeText={(v) => setEq({ ...eq, warranty_expires: v })} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" /></View></View>
                   <TextField label="Notes" value={eq.notes} onChangeText={(v) => setEq({ ...eq, notes: v })} />
-                  <View style={styles.row}><Button label="Cancel" variant="ghost" onPress={() => setEqOpen(false)} /><Button label="Add equipment" onPress={() => void addEquipment()} loading={busy === 'eq'} style={styles.grow} /></View>
-                </Card>
-              ) : <Button label="Add equipment" variant="outline" icon={<Plus size={16} color={colors.foreground} />} onPress={() => setEqOpen(true)} />) : null}
+                  <View style={styles.row}><Button label="Cancel" variant="outline" onPress={() => setEqOpen(false)} /><Button label="Add equipment" onPress={() => void addEquipment()} loading={busy === 'eq'} style={styles.grow} /></View>
+                </SectionCard>
+              ) : <Button label="Add equipment" size="lg" fullWidth icon={<Plus size={18} color={colors.accentForeground} />} onPress={() => setEqOpen(true)} />) : null}
             </View>
           ) : null}
           {tab === 'agreements' ? (
             <View style={styles.section}>
-              {agreements === null ? <Skeleton height={80} /> : agreements.length === 0 ? <Text variant="small" color="mutedForeground">No service agreements.</Text> : agreements.map((a) => (
+              {agreements === null ? <Skeleton height={80} /> : agreements.length === 0 ? <EmptyState icon={FileSignature} title="No service agreements" message="Maintenance plans with visits per year and the next service date." /> : agreements.map((a) => (
                 <Card key={a.id} style={styles.itemRow}>
+                  <IconTile icon={FileSignature} color={colors.success} />
                   <View style={styles.grow}>
                     <Text variant="bodyMedium">{a.plan_name} <Text variant="caption" color="mutedForeground">· {a.frequency} · {a.visits_per_year}/yr · ${Number(a.price).toFixed(2)}</Text></Text>
                     <Text variant="caption" color="mutedForeground">{[`From ${day(a.start_date)}`, a.end_date && `to ${day(a.end_date)}`, a.next_service_date && `next ${day(a.next_service_date)}`].filter(Boolean).join(' · ')}</Text>
@@ -240,16 +253,15 @@ export default function CustomerScreen() {
                 </Card>
               ))}
               {isStaff ? (agOpen ? (
-                <Card style={styles.section}>
-                  <Text variant="heading">Add agreement</Text>
+                <SectionCard title="Add agreement" icon={FileSignature} color={colors.success}>
                   <TextField label="Plan name *" value={ag.plan_name} onChangeText={(v) => setAg({ ...ag, plan_name: v })} />
                   <TextField label="Frequency" value={ag.frequency} onChangeText={(v) => setAg({ ...ag, frequency: v })} placeholder="annual / semi-annual / quarterly" autoCapitalize="none" />
                   <View style={styles.row}><View style={styles.grow}><TextField label="Visits per year *" value={ag.visits_per_year} onChangeText={(v) => setAg({ ...ag, visits_per_year: v })} keyboardType="number-pad" /></View><View style={styles.grow}><TextField label="Price *" value={ag.price} onChangeText={(v) => setAg({ ...ag, price: v })} keyboardType="decimal-pad" /></View></View>
                   <View style={styles.row}><View style={styles.grow}><TextField label="Start date *" value={ag.start_date} onChangeText={(v) => setAg({ ...ag, start_date: v })} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" /></View><View style={styles.grow}><TextField label="End date" value={ag.end_date} onChangeText={(v) => setAg({ ...ag, end_date: v })} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" /></View></View>
                   <TextField label="Next service" value={ag.next_service_date} onChangeText={(v) => setAg({ ...ag, next_service_date: v })} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" />
-                  <View style={styles.row}><Button label="Cancel" variant="ghost" onPress={() => setAgOpen(false)} /><Button label="Add agreement" onPress={() => void addAgreement()} loading={busy === 'ag'} style={styles.grow} /></View>
-                </Card>
-              ) : <Button label="Add agreement" variant="outline" icon={<Plus size={16} color={colors.foreground} />} onPress={() => setAgOpen(true)} />) : null}
+                  <View style={styles.row}><Button label="Cancel" variant="outline" onPress={() => setAgOpen(false)} /><Button label="Add agreement" onPress={() => void addAgreement()} loading={busy === 'ag'} style={styles.grow} /></View>
+                </SectionCard>
+              ) : <Button label="Add agreement" size="lg" fullWidth icon={<Plus size={18} color={colors.accentForeground} />} onPress={() => setAgOpen(true)} />) : null}
             </View>
           ) : null}
         </View>
@@ -261,33 +273,33 @@ export default function CustomerScreen() {
 }
 
 function QuickAction({ icon: Icon, label, onPress }: { icon: typeof Phone; label: string; onPress: () => void }) {
-  const { colors } = useTheme();
   return (
-    <Button label={label} variant="secondary" size="sm" icon={<Icon size={16} color={colors.accent} />} onPress={onPress} style={styles.quickBtn} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.quickAction, pressed && { opacity: 0.7 }]}>
+      <View style={styles.quickIcon}><Icon size={20} color="#ffffff" /></View>
+      <Text variant="caption" color="#ffffff" style={styles.strong}>{label}</Text>
+    </Pressable>
   );
 }
 
-function ContactLine({ icon: Icon, value, onPress }: { icon: typeof Phone; value: string | null | undefined; onPress?: () => void }) {
-  const { colors } = useTheme();
-  if (!value) return null;
-  return (
-    <View style={styles.contact}>
-      <Icon size={16} color={colors.mutedForeground} />
-      <Text variant="small" color={onPress ? 'accent' : 'foreground'} style={styles.grow} onPress={onPress}>{value}</Text>
-    </View>
-  );
+/** InfoRows for the values that are present (the first gets no divider). */
+function rows(items: { icon: typeof Phone; label: string; value: string | null | undefined; onPress?: () => void }[]) {
+  return items.filter((r) => !!r.value).map((r, i) => <InfoRow key={`${r.label}-${i}`} first={i === 0} icon={r.icon} label={r.label} value={r.value as string} onPress={r.onPress} />);
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { paddingBottom: spacing[12] },
   pad: { paddingHorizontal: spacing[4], paddingVertical: spacing[3], gap: spacing[3] },
-  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
-  quickBtn: { flexGrow: 1 },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], marginTop: spacing[3] },
+  quickAction: { flexGrow: 1, flexBasis: 64, alignItems: 'center', gap: 6, paddingVertical: spacing[1], minHeight: 56, justifyContent: 'center' },
+  quickIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.22)', borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  heroCard: { borderRadius: radius.xxl, padding: spacing[5], gap: spacing[2], overflow: 'hidden' },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  avatarRing: { padding: 3, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.22)' },
+  strong: { fontFamily: 'Inter_600SemiBold' },
+  empty: { padding: spacing[4] },
   section: { gap: spacing[3] },
   row: { flexDirection: 'row', gap: spacing[2], alignItems: 'flex-start' },
   grow: { flex: 1, minWidth: 0 },
-  contact: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
-  serviceLine: { borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3], gap: 2 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
 });

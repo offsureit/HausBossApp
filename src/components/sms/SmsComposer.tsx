@@ -4,7 +4,7 @@ import { Send } from 'lucide-react-native';
 import { IconButton, Text } from '~/components/ui';
 import { SMS_MAX_LENGTH } from '~/services/sms';
 import { useTheme } from '~/theme/ThemeProvider';
-import { fontFamily, radius, spacing } from '~/theme/tokens';
+import { fieldSurface, fontFamily, radius, spacing } from '~/theme/tokens';
 
 export interface SmsComposerProps {
   onSend: (body: string) => Promise<boolean>;
@@ -14,7 +14,7 @@ export interface SmsComposerProps {
 
 /** Text input + send, 1600 characters max (web `SmsComposer`). */
 export function SmsComposer({ onSend, disabledReason }: SmsComposerProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const disabled = !!disabledReason || sending;
@@ -28,8 +28,8 @@ export function SmsComposer({ onSend, disabledReason }: SmsComposerProps) {
     if (ok) setText('');
   };
   return (
-    <View style={[styles.wrap, { borderTopColor: colors.border, backgroundColor: colors.background }]} accessibilityLabel="Send text message">
-      <View style={styles.row}>
+    <View style={[styles.wrap, { borderTopColor: 'transparent', backgroundColor: colors.background }]} accessibilityLabel="Send text message">
+      <View style={[styles.row, fieldSurface(colors, scheme), { backgroundColor: colors.card }]}>
         <TextInput
           accessibilityLabel="Message"
           value={text}
@@ -39,17 +39,18 @@ export function SmsComposer({ onSend, disabledReason }: SmsComposerProps) {
           editable={!disabled}
           multiline
           maxLength={SMS_MAX_LENGTH}
-          style={[styles.input, { color: colors.foreground, backgroundColor: colors.muted }]}
+          style={[styles.input, { color: colors.foreground }]}
         />
-        <IconButton icon={Send} label="Send" tone="accent" variant="filled" onPress={() => void submit()} disabled={!canSend} />
+        <IconButton icon={Send} label="Send" tone="accent" variant="solid" size={40} onPress={() => void submit()} disabled={!canSend} />
       </View>
-      <Text variant="caption" color="mutedForeground">{disabledReason ?? `${trimmed.length}/${SMS_MAX_LENGTH}`}</Text>
+      <Text variant="caption" color="mutedForeground" style={styles.count}>{disabledReason ?? `${trimmed.length}/${SMS_MAX_LENGTH}`}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[2], gap: 4 },
-  row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2] },
-  input: { flex: 1, minHeight: 44, maxHeight: 140, borderRadius: radius.lg, paddingHorizontal: spacing[3], paddingVertical: spacing[2], fontFamily: fontFamily.regular, fontSize: 16 },
+  row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2], borderRadius: radius.xl, padding: 4, paddingLeft: spacing[3] },
+  input: { flex: 1, minHeight: 40, maxHeight: 140, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: 16 },
+  count: { alignSelf: 'flex-end', paddingRight: spacing[2] },
 });

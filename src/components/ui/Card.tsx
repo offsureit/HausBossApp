@@ -1,21 +1,26 @@
 import { StyleSheet, View, type ViewProps } from 'react-native';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing } from '~/theme/tokens';
+import { elevation, radius, spacing, withAlpha } from '~/theme/tokens';
 
 export interface CardProps extends ViewProps {
   padded?: boolean;
   /** Accent border (e.g. the live job). */
   highlighted?: boolean;
+  /** Shadow depth in light mode (dark mode uses a border). */
+  level?: 1 | 2 | 3;
 }
 
-export function Card({ padded = true, highlighted = false, style, ...rest }: CardProps) {
+/** A floating surface: soft layered shadow in light mode, a hairline border in dark mode. */
+export function Card({ padded = true, highlighted = false, level = 2, style, ...rest }: CardProps) {
   const { colors, scheme } = useTheme();
+  const border = highlighted ? colors.accent : scheme === 'dark' ? colors.border : withAlpha(colors.border, 0.6);
   return (
     <View
       {...rest}
       style={[
         styles.card,
-        { backgroundColor: colors.card, borderColor: highlighted ? colors.accent : colors.border, shadowOpacity: scheme === 'dark' ? 0 : 0.06 },
+        { backgroundColor: colors.card, borderColor: border, borderWidth: highlighted ? 1.5 : StyleSheet.hairlineWidth },
+        elevation(level, scheme),
         padded && { padding: spacing[4] },
         style,
       ]}
@@ -24,12 +29,5 @@ export function Card({ padded = true, highlighted = false, style, ...rest }: Car
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    shadowColor: '#0b1f4a',
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 1,
-  },
+  card: { borderRadius: radius.lg },
 });

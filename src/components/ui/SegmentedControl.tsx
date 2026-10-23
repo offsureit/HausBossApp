@@ -28,7 +28,7 @@ export function SegmentedControl<T extends string>({ value, segments, onChange, 
         const active = s.value === value;
         return (
           <Pressable key={s.value} accessibilityRole="tab" accessibilityState={{ selected: active }} onPress={() => { if (!active) { haptics.selection(); onChange(s.value); } }} style={styles.segment}>
-            <Text variant="label" color={active ? 'foreground' : 'mutedForeground'} numberOfLines={1}>{s.label}</Text>
+            <Text variant="label" color={active ? 'foreground' : 'mutedForeground'} numberOfLines={1} style={active ? styles.activeText : undefined}>{s.label}</Text>
           </Pressable>
         );
       })}
@@ -37,7 +37,8 @@ export function SegmentedControl<T extends string>({ value, segments, onChange, 
 }
 
 const styles = StyleSheet.create({
-  track: { flexDirection: 'row', padding: spacing[1], borderRadius: radius.md, position: 'relative' },
-  pill: { position: 'absolute', top: spacing[1], bottom: spacing[1], left: spacing[1], borderRadius: radius.sm, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  track: { flexDirection: 'row', padding: spacing[1], borderRadius: radius.full, position: 'relative' },
+  pill: { position: 'absolute', top: spacing[1], bottom: spacing[1], left: spacing[1], borderRadius: radius.full, shadowColor: '#0b1f4a', shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  activeText: { fontFamily: 'Inter_600SemiBold' },
   segment: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing[2] },
 });

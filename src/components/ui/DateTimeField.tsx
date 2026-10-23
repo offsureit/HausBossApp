@@ -7,7 +7,7 @@ import { Button } from './Button';
 import { Sheet } from './Sheet';
 import { Text } from './Text';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing, touchTarget } from '~/theme/tokens';
+import { fieldSurface, fontFamily, radius, spacing, touchTarget } from '~/theme/tokens';
 
 export interface DateTimeFieldProps {
   label: string;
@@ -36,7 +36,7 @@ export function DateTimeField({ label, mode, value, onChange, placeholder, minim
   const [iosOpen, setIosOpen] = useState(false);
   const [draft, setDraft] = useState<Date>(value ?? snap(new Date(), minuteInterval));
   const Icon = mode === 'date' ? CalendarDays : Clock;
-  const text = value ? (mode === 'date' ? format(value, 'EEE, MMM d, yyyy') : format(value, 'h:mm a')) : (placeholder ?? (mode === 'date' ? 'Pick a date' : 'Pick a time'));
+  const text = value ? (mode === 'date' ? format(value, value.getFullYear() === new Date().getFullYear() ? 'EEE MMM d' : 'MMM d, yyyy') : format(value, 'h:mm a')) : (placeholder ?? (mode === 'date' ? 'Pick a date' : 'Pick a time'));
 
   const openPicker = () => {
     const current = value ?? snap(new Date(), minuteInterval);
@@ -57,19 +57,14 @@ export function DateTimeField({ label, mode, value, onChange, placeholder, minim
 
   return (
     <View style={styles.wrap}>
-      <Text variant="label">{label}</Text>
-      <View style={styles.row}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${label}: ${text}`}
-          disabled={disabled}
-          onPress={openPicker}
-          style={[styles.field, { borderColor: error ? colors.destructive : colors.input, backgroundColor: disabled ? colors.muted : colors.card }]}
-        >
-          <Icon size={18} color={colors.mutedForeground} />
-          <Text variant="body" color={value ? 'foreground' : 'mutedForeground'} style={styles.value}>{text}</Text>
+      <Text variant="label" style={styles.label}>{label}</Text>
+      {/* The clear button sits inside the field, so two fields fit side by side without wrapping. */}
+      <View style={[styles.field, fieldSurface(colors, scheme, { error: !!error, disabled: !!disabled })]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${text}`} disabled={disabled} onPress={openPicker} style={styles.press}>
+          <Icon size={16} color={colors.accent} />
+          <Text variant="body" color={value ? 'foreground' : 'mutedForeground'} style={styles.value} numberOfLines={1}>{text}</Text>
         </Pressable>
-        {clearable && value && !disabled ? <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${label}`} onPress={() => onChange(null)} hitSlop={8} style={styles.clear}><X size={18} color={colors.mutedForeground} /></Pressable> : null}
+        {clearable && value && !disabled ? <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${label}`} onPress={() => onChange(null)} hitSlop={8} style={[styles.clear, { backgroundColor: colors.muted }]}><X size={14} color={colors.mutedForeground} /></Pressable> : null}
       </View>
       {error ? <Text variant="caption" color="destructive">{error}</Text> : hint ? <Text variant="caption" color="mutedForeground">{hint}</Text> : null}
       {Platform.OS === 'ios' ? (
@@ -82,9 +77,11 @@ export function DateTimeField({ label, mode, value, onChange, placeholder, minim
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing[1] },
+  wrap: { gap: 6 },
+  label: { fontFamily: fontFamily.semibold, fontSize: 13, lineHeight: 18 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
-  field: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing[2], minHeight: touchTarget + 4, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: radius.md, paddingHorizontal: spacing[3] },
+  field: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: touchTarget + 8, borderRadius: radius.lg - 4, paddingLeft: spacing[3], paddingRight: spacing[2] },
   value: { flex: 1, minWidth: 0 },
-  clear: { padding: spacing[2] },
+  clear: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  press: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'stretch' },
 });

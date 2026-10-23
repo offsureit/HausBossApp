@@ -1,14 +1,14 @@
 # file name | caption
 01-login|Sign in
 02-forgot-password|Forgot password
-03-today|Technician — Today (next job, also today, completed)
-04-calendar|Calendar — day view
+03-today|Technician — Today (stats header, next job, late warning)
+04-calendar|Calendar — week strip and day view
 05-team-chat|Team chat — job threads (technician)
 06-customer-texts|Customer texts — inbox (technician)
 07-more|More — settings and tools
 08-notifications|Notifications
 09-search|Search — jobs, customers, texts
-10-job-details|Job hub — Details
+10-job-details|Job hub — Details (customer, service)
 11-job-time|Job hub — Time tracking
 11-job-media|Job hub — Media (photos and videos)
 11-job-chat|Job hub — Chat
@@ -16,13 +16,13 @@
 11-job-estimates|Job hub — Estimates
 11-job-notes|Job hub — Notes
 12-location-explainer|Location sharing explainer (before the OS prompt)
-13-on-my-way-sheet|On My Way — ETA and customer text
+13-on-my-way-sheet|On My Way — driving distance and time
 14-security|Security & permissions (app lock, location, push)
 15-offline-banner|Offline mode — queued changes banner
 16-today-dark|Today — dark mode
 17-job-dark|Job hub — dark mode
 20-calendar-owner|Dispatcher — Calendar
-21-dashboard|Dispatcher — Dashboard (KPIs, live map area)
+21-dashboard|Dispatcher — Dashboard (KPI header, live map)
 22-dashboard-roster|Dispatcher — Employee roster and upcoming jobs
 23-employee-sheet|Employee sheet — contact, last location, open jobs
 24-reassign-sheet|Reassign a job

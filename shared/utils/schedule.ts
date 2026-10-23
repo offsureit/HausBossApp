@@ -36,8 +36,9 @@ export function runningLate(job: { status: string; scheduledDate?: string | null
   return end < now.getTime() ? new Date(end) : null;
 }
 
-/** "Late · window ended 3:00 PM" (adds the day when it ended on an earlier day). */
+/** "Late · window ended 3:00 PM": adds the weekday when it ended earlier this week, the date when longer ago. */
 export function lateLabel(windowEnd: Date, now: Date = new Date()): string {
   const sameDay = windowEnd.toDateString() === now.toDateString();
-  return `Late · window ended ${format(windowEnd, sameDay ? 'h:mm a' : 'EEE h:mm a')}`;
+  const withinWeek = now.getTime() - windowEnd.getTime() < 6 * 24 * 60 * 60_000;
+  return `Late · window ended ${format(windowEnd, sameDay ? 'h:mm a' : withinWeek ? 'EEE h:mm a' : 'MMM d, h:mm a')}`;
 }

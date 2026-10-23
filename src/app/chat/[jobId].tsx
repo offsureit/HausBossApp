@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Info, MessageSquare } from 'lucide-react-native';
 import { jobNumber } from '@/services/adapters/jobAdapter';
 import { JobChat } from '~/components/jobs/JobChat';
-import { Button, EmptyState, IconButton, StatusBadge, Text } from '~/components/ui';
+import { Button, EmptyState, HeroIconButton, StatusBadge, Text } from '~/components/ui';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useJobsQuery } from '~/features/jobs/useJobs';
 import { useNotifications } from '~/features/notifications/NotificationsProvider';
@@ -27,7 +27,7 @@ export default function ChatThreadScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { backgroundColor: colors.background }]} keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}>
-      <Stack.Screen options={{ title: job ? job.clientName : 'Chat', headerBackTitle: 'Back', headerRight: job ? () => <IconButton icon={Info} label="Open job" onPress={() => router.push({ pathname: '/job/[id]', params: { id: job.id } })} /> : undefined }} />
+      <Stack.Screen options={{ title: job ? job.clientName : 'Chat', headerBackTitle: 'Back', headerRight: job ? () => <HeroIconButton icon={Info} label="Open job" onPress={() => router.push({ pathname: '/job/[id]', params: { id: job.id } })} /> : undefined }} />
       {!job ? (
         <View style={styles.pad}><EmptyState icon={MessageSquare} title="Job not found" action={<Button label="Back" variant="outline" onPress={() => router.back()} />} /></View>
       ) : (

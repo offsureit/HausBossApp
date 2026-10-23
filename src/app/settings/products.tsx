@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Package, Pencil, Plus, Search, Trash2 } from 'lucide-react-native';
+import { Package, Pencil, Plus, Search, Trash2, Wrench } from 'lucide-react-native';
 import { formatMoney } from '@/utils/estimateMath';
 import type { CatalogItem, LineItemKind } from '@/types';
-import { Button, Card, Dialog, EmptyState, IconButton, Screen, SegmentedControl, Sheet, SkeletonCard, Text, TextField, Toggle } from '~/components/ui';
+import { Button, Card, Dialog, EmptyState, HeroIconButton, IconButton, IconTile, Screen, SegmentedControl, Sheet, SkeletonCard, Text, TextField, Toggle } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { toast } from '~/features/toast/store';
@@ -61,7 +61,7 @@ export default function ProductsScreen() {
 
   return (
     <Screen scroll edges={['left', 'right']} refreshing={query.isRefetching} onRefresh={() => void query.refetch()} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Products & services', headerBackTitle: 'Back', headerRight: isStaff ? () => <IconButton icon={Plus} label="Add item" variant="filled" tone="accent" onPress={() => setDraft(emptyDraft(kind))} /> : undefined }} />
+      <Stack.Screen options={{ title: 'Products & services', headerBackTitle: 'Back', headerRight: isStaff ? () => <HeroIconButton icon={Plus} label="Add item" onPress={() => setDraft(emptyDraft(kind))} /> : undefined }} />
       <SegmentedControl<LineItemKind> value={kind} segments={[{ value: 'part', label: 'Parts' }, { value: 'service', label: 'Services' }]} onChange={setKind} accessibilityLabel="Item kind" />
       <TextField label="Search" value={search} onChangeText={setSearch} placeholder="Name or description" autoCorrect={false} leading={<Search size={18} color={colors.mutedForeground} />} />
       {query.isPending ? <View style={styles.list}><SkeletonCard /><SkeletonCard /></View>
@@ -69,13 +69,18 @@ export default function ProductsScreen() {
         : (
           <View style={styles.list}>
             {items.map((i) => (
-              <Card key={i.id} style={styles.row}>
+              <Card key={i.id} style={[styles.row, !i.is_active && styles.inactive]}>
+                <IconTile icon={kind === 'part' ? Package : Wrench} color={kind === 'part' ? colors.accent : colors.success} size={42} />
                 <View style={styles.grow}>
-                  <Text variant="bodyMedium">{i.name}{!i.is_active ? <Text variant="caption" color="mutedForeground"> · inactive</Text> : null}</Text>
-                  {i.description ? <Text variant="caption" color="mutedForeground">{i.description}</Text> : null}
-                  <Text variant="small" style={styles.mono}>{formatMoney(Number(i.unit_price))} <Text variant="caption" color="mutedForeground">/ {i.unit ?? 'ea'}</Text></Text>
+                  <Text variant="bodyMedium" style={styles.strong}>{i.name}</Text>
+                  {i.description ? <Text variant="caption" color="mutedForeground" numberOfLines={2}>{i.description}</Text> : null}
+                  <View style={styles.priceRow}>
+                    <Text variant="heading" color="accent" style={styles.mono}>{formatMoney(Number(i.unit_price))}</Text>
+                    <Text variant="caption" color="mutedForeground">/ {i.unit ?? 'ea'}</Text>
+                    {!i.is_active ? <View style={[styles.pill, { backgroundColor: colors.muted }]}><Text variant="caption" color="mutedForeground">Inactive</Text></View> : null}
+                  </View>
                 </View>
-                {isStaff ? <><IconButton icon={Pencil} label={`Edit ${i.name}`} onPress={() => setDraft({ id: i.id, kind: i.kind as LineItemKind, name: i.name, description: i.description ?? '', unit: i.unit ?? 'ea', unit_price: String(Number(i.unit_price)), is_active: i.is_active })} /><IconButton icon={Trash2} label={`Delete ${i.name}`} tone="destructive" onPress={() => setDeleting(i)} /></> : null}
+                {isStaff ? <View style={styles.actions}><IconButton icon={Pencil} label={`Edit ${i.name}`} variant="filled" size={38} onPress={() => setDraft({ id: i.id, kind: i.kind as LineItemKind, name: i.name, description: i.description ?? '', unit: i.unit ?? 'ea', unit_price: String(Number(i.unit_price)), is_active: i.is_active })} /><IconButton icon={Trash2} label={`Delete ${i.name}`} tone="destructive" variant="filled" size={38} onPress={() => setDeleting(i)} /></View> : null}
               </Card>
             ))}
           </View>
@@ -103,7 +108,12 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   content: { gap: spacing[3] },
   list: { gap: spacing[2] },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  inactive: { opacity: 0.7 },
+  strong: { fontFamily: 'Inter_600SemiBold' },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 2 },
+  pill: { borderRadius: 999, paddingHorizontal: spacing[2], paddingVertical: 1, marginLeft: spacing[1] },
+  actions: { gap: spacing[2] },
   rowFields: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   grow: { flex: 1, minWidth: 0, gap: 2 },
   mono: { fontVariant: ['tabular-nums'] },

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Pencil, Plus, Tags, Trash2 } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Pencil, Plus, Tag, Tags, Trash2 } from 'lucide-react-native';
 import type { JobCategory } from '@/types';
-import { Button, Card, Dialog, EmptyState, IconButton, Screen, Sheet, SkeletonCard, Text, TextField, Toggle } from '~/components/ui';
+import { Button, Card, Dialog, EmptyState, HeroIconButton, IconButton, IconTile, Screen, Sheet, SkeletonCard, Text, TextField, Toggle } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { categoriesKey } from '~/features/jobs/useCategories';
@@ -67,7 +67,7 @@ export default function CategoriesScreen() {
 
   return (
     <Screen scroll edges={['left', 'right']} refreshing={query.isRefetching} onRefresh={() => void query.refetch()} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Job categories', headerBackTitle: 'Back', headerRight: isStaff ? () => <IconButton icon={Plus} label="Add category" variant="filled" tone="accent" onPress={() => setEditing({ label: '' })} /> : undefined }} />
+      <Stack.Screen options={{ title: 'Job categories', headerBackTitle: 'Back', headerRight: isStaff ? () => <HeroIconButton icon={Plus} label="Add category" onPress={() => setEditing({ label: '' })} /> : undefined }} />
       <Text variant="small" color="mutedForeground">Categories label jobs and prefill estimate titles. Inactive ones stay on old jobs but are hidden from pickers.</Text>
       {query.isPending ? <View style={styles.list}><SkeletonCard /><SkeletonCard /></View>
         : items.length === 0 ? <EmptyState icon={Tags} title="No categories yet" action={isStaff ? <Button label="Add category" onPress={() => setEditing({ label: '' })} /> : undefined} />
@@ -75,15 +75,22 @@ export default function CategoriesScreen() {
           <Card padded={false}>
             {items.map((c, i) => (
               <View key={c.id} style={[styles.row, i > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                <Text variant="bodyMedium" color={c.is_active ? 'foreground' : 'mutedForeground'} style={styles.grow}>{c.label}</Text>
+                <View style={styles.top}>
+                  <IconTile icon={Tag} color={c.is_active ? colors.accent : colors.mutedForeground} />
+                  <View style={styles.grow}>
+                    <Text variant="bodyMedium" color={c.is_active ? 'foreground' : 'mutedForeground'} style={styles.strong}>{c.label}</Text>
+                    <Text variant="caption" color={c.is_active ? 'success' : 'mutedForeground'}>{c.is_active ? 'Active' : 'Hidden from pickers'}</Text>
+                  </View>
+                  {isStaff ? <Toggle value={c.is_active} onValueChange={() => void toggle(c)} accessibilityLabel={`${c.label} active`} /> : null}
+                </View>
                 {isStaff ? (
-                  <>
-                    <IconButton icon={ArrowUp} label={`Move ${c.label} up`} size={36} onPress={() => void move(i, -1)} disabled={i === 0} />
-                    <IconButton icon={ArrowDown} label={`Move ${c.label} down`} size={36} onPress={() => void move(i, 1)} disabled={i === items.length - 1} />
-                    <Toggle value={c.is_active} onValueChange={() => void toggle(c)} accessibilityLabel={`${c.label} active`} />
-                    <IconButton icon={Pencil} label={`Rename ${c.label}`} size={36} onPress={() => setEditing({ id: c.id, label: c.label })} />
-                    <IconButton icon={Trash2} label={`Delete ${c.label}`} tone="destructive" size={36} onPress={() => setDeleting(c)} />
-                  </>
+                  <View style={styles.tools}>
+                    <IconButton icon={ArrowUp} label={`Move ${c.label} up`} variant="filled" size={36} onPress={() => void move(i, -1)} disabled={i === 0} />
+                    <IconButton icon={ArrowDown} label={`Move ${c.label} down`} variant="filled" size={36} onPress={() => void move(i, 1)} disabled={i === items.length - 1} />
+                    <View style={styles.grow} />
+                    <IconButton icon={Pencil} label={`Rename ${c.label}`} variant="filled" size={36} onPress={() => setEditing({ id: c.id, label: c.label })} />
+                    <IconButton icon={Trash2} label={`Delete ${c.label}`} tone="destructive" variant="filled" size={36} onPress={() => setDeleting(c)} />
+                  </View>
                 ) : null}
               </View>
             ))}
@@ -98,8 +105,11 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
+  top: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  tools: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], paddingLeft: 48 },
+  strong: { fontFamily: 'Inter_600SemiBold' },
   content: { gap: spacing[3] },
   list: { gap: spacing[2] },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: spacing[1], paddingLeft: spacing[4], paddingRight: spacing[1], minHeight: 52 },
+  row: { paddingHorizontal: spacing[4], paddingVertical: spacing[3], gap: spacing[2] },
   grow: { flex: 1, minWidth: 0 },
 });

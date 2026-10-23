@@ -6,7 +6,7 @@ import { MessageSquare, Search } from 'lucide-react-native';
 import Animated from 'react-native-reanimated';
 import { jobNumber } from '@/services/adapters/jobAdapter';
 import { isClosedStatus } from '@/utils/jobStatus';
-import { EmptyState, PressableScale, Screen, ScreenHeader, SkeletonCard, StatusBadge, Text, TextField } from '~/components/ui';
+import { Avatar, Card, EmptyState, HeroHeader, PressableScale, Screen, SkeletonCard, StatusBadge, Text, TextField } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useJobsQuery } from '~/features/jobs/useJobs';
@@ -35,19 +35,19 @@ export default function ChatScreen() {
   const unreadTotal = useMemo(() => Array.from(unreadChatByJob.values()).reduce((a, b) => a + b, 0), [unreadChatByJob]);
 
   return (
-    <Screen scroll refreshing={jobs.isRefetching} onRefresh={() => void jobs.refetch()} contentContainerStyle={styles.content}>
-      <ScreenHeader title="Chat" subtitle={unreadTotal > 0 ? `${unreadTotal} unread` : isContractor ? 'Your job threads' : 'Team threads per job'} />
+    <Screen scroll hero refreshing={jobs.isRefetching} onRefresh={() => void jobs.refetch()} contentContainerStyle={styles.content}>
+      <HeroHeader eyebrow="Team chat" title="Chat" subtitle={unreadTotal > 0 ? `${unreadTotal} unread` : isContractor ? 'Your job threads' : 'Team threads per job'} />
       <TextField label="Filter" value={query} onChangeText={setQuery} placeholder="Customer, address or technician" autoCorrect={false} leading={<Search size={18} color={colors.mutedForeground} />} />
       {jobs.isPending ? <View style={styles.list}><SkeletonCard /><SkeletonCard /></View>
         : list.length === 0 ? <EmptyState icon={MessageSquare} title="No jobs to chat about yet" message={query ? 'No jobs match the filter.' : 'Every job has a thread; it appears here once a job exists.'} />
         : (
-          <View>
+          <Card padded={false}>
             {list.map((j, i) => {
               const unread = unreadChatByJob.get(j.id) ?? 0;
               return (
                 <Animated.View key={j.id} entering={enterUp(i)}>
-                  <PressableScale accessibilityRole="button" accessibilityLabel={`Open chat for ${j.clientName}${unread ? `, ${unread} unread` : ''}`} onPress={() => router.push({ pathname: '/chat/[jobId]', params: { jobId: j.id } })} scaleTo={0.985} style={[styles.row, { borderBottomColor: colors.border }]}>
-                    <MessageSquare size={18} color={unread ? colors.accent : colors.mutedForeground} />
+                  <PressableScale accessibilityRole="button" accessibilityLabel={`Open chat for ${j.clientName}${unread ? `, ${unread} unread` : ''}`} onPress={() => router.push({ pathname: '/chat/[jobId]', params: { jobId: j.id } })} scaleTo={0.985} style={[styles.row, i > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+                    <Avatar name={j.clientName} size={44} />
                     <View style={styles.grow}>
                       <View style={styles.head}>
                         <Text variant={unread ? 'bodyMedium' : 'body'} style={[styles.grow, unread > 0 ? { fontFamily: fontFamily.semibold } : null]}>{j.clientName}</Text>
@@ -60,7 +60,7 @@ export default function ChatScreen() {
                 </Animated.View>
               );
             })}
-          </View>
+          </Card>
         )}
     </Screen>
   );
@@ -69,7 +69,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   content: { gap: spacing[3] },
   list: { gap: spacing[3] },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3], paddingVertical: spacing[3], borderBottomWidth: StyleSheet.hairlineWidth },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3], paddingVertical: spacing[3], paddingHorizontal: spacing[4] },
   grow: { flex: 1, minWidth: 0, gap: 2 },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   badge: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },

@@ -3,15 +3,14 @@ import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View,
 import { Link, router } from 'expo-router';
 import { AlertCircle, Lock, Mail } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { BrandLogo } from '~/components/BrandLogo';
-import { Button, Text, TextField } from '~/components/ui';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HouseMark } from '~/components/BrandLogo';
+import { Button, Card, GradientBackdrop, HERO_TEXT_MUTED, Text, TextField, useLightStatusBar } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { haptics } from '~/lib/haptics';
 import { useMotion } from '~/motion';
 import { useTheme } from '~/theme/ThemeProvider';
 import { radius, spacing, withAlpha } from '~/theme/tokens';
-import { API_URL } from '~/lib/env';
 
 export default function LoginScreen() {
   const auth = useAuth();
@@ -46,18 +45,29 @@ export default function LoginScreen() {
 
   const canSubmit = email.trim().length > 0 && password.length > 0 && !busy;
 
+  const insets = useSafeAreaInsets();
+  useLightStatusBar();
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['bottom', 'left', 'right']} style={[styles.root, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.root}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bounces={false}>
-          <Animated.View entering={enterFade()} style={styles.logo}>
-            <BrandLogo height={64} />
-            <Text variant="small" color="mutedForeground" align="center">Field-service job & crew management</Text>
-          </Animated.View>
+          {/* Brand gradient with the white lock-up; the form card overlaps its rounded bottom edge. */}
+          <View style={[styles.hero, { paddingTop: insets.top + spacing[10] }]}>
+            <GradientBackdrop watermark={false} />
+            <Animated.View entering={enterFade()} style={styles.logo}>
+              <View style={styles.logoRow} accessible accessibilityRole="image" accessibilityLabel="HausBoss">
+                <HouseMark size={58} primary="#ffffff" accent="#7fa6ff" />
+                <Text style={styles.word} color="#ffffff">haus<Text style={styles.word} color="#9dbcff">boss</Text></Text>
+              </View>
+              <Text variant="small" color={HERO_TEXT_MUTED} align="center">Field-service job & crew management</Text>
+            </Animated.View>
+          </View>
 
-          <Animated.View style={[styles.form, shakeStyle]}>
+          <Animated.View style={[styles.formWrap, shakeStyle]}>
+          <Card level={3} style={styles.form}>
             <Animated.View entering={enterUp(0)}>
-              <Text variant="title">Sign in</Text>
+              <Text variant="title">Welcome back</Text>
+              <Text variant="small" color="mutedForeground">Sign in to your company workspace</Text>
             </Animated.View>
             <Animated.View entering={enterUp(1)}>
               <TextField
@@ -106,15 +116,12 @@ export default function LoginScreen() {
             <Animated.View entering={enterUp(3)} style={styles.actions}>
               <Button testID="login-submit" label="Sign in" size="lg" fullWidth loading={busy} disabled={!canSubmit} onPress={() => void submit()} />
               <Link href="/forgot-password" asChild>
-                <Button label="Forgot password?" variant="ghost" />
+                <Button label="Forgot password?" variant="ghost" style={styles.center} />
               </Link>
             </Animated.View>
+          </Card>
           </Animated.View>
 
-          <Animated.View entering={enterFade(300)} style={styles.footer}>
-            <Text variant="caption" color="mutedForeground" align="center">New companies sign up on the web at hausboss.app.</Text>
-            {API_URL !== 'https://hausboss.app' ? <Text variant="caption" color="warning" align="center">Server: {API_URL}</Text> : null}
-          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -123,11 +130,15 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: spacing[6], paddingVertical: spacing[8], justifyContent: 'center', gap: spacing[8] },
-  logo: { alignItems: 'center', gap: spacing[2] },
-  form: { gap: spacing[4] },
+  content: { flexGrow: 1, paddingBottom: spacing[8], gap: spacing[6] },
+  hero: { paddingHorizontal: spacing[6], paddingBottom: spacing[16], borderBottomLeftRadius: radius.xxl, borderBottomRightRadius: radius.xxl, overflow: 'hidden' },
+  logo: { alignItems: 'center', gap: spacing[3] },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  word: { fontFamily: 'Inter_700Bold', fontSize: 40, lineHeight: 48, letterSpacing: -1 },
+  formWrap: { marginTop: -spacing[12], paddingHorizontal: spacing[5] },
+  form: { gap: spacing[4], padding: spacing[5], borderRadius: radius.xxl },
   actions: { gap: spacing[2], alignItems: 'center' },
   error: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2], padding: spacing[3], borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth },
   errorText: { flex: 1, gap: spacing[1] },
-  footer: { gap: spacing[1] },
+  center: { alignSelf: 'center' },
 });

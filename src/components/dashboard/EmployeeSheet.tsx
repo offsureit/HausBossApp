@@ -59,7 +59,7 @@ export function EmployeeSheet({ employee, jobs, location, onClose, onReassign }:
           <Text variant="overline" color="mutedForeground">Open jobs ({open.length})</Text>
           {open.length === 0 ? <Text variant="small" color="mutedForeground">No open jobs assigned.</Text> : open.map((j) => (
             <View key={j.id} style={styles.job}>
-              <JobCard job={j} onPress={() => { onClose(); }} footer={<Button label="Reassign" variant="outline" size="sm" icon={<UserCog size={14} color={colors.foreground} />} onPress={() => onReassign(j)} />} />
+              <JobCard job={j} onPress={() => { onClose(); }} footer={<Button label="Reassign" accessibilityLabel={`Reassign ${j.clientName}`} variant="outline" size="sm" icon={<UserCog size={14} color={colors.foreground} />} onPress={() => onReassign(j)} />} />
             </View>
           ))}
         </>

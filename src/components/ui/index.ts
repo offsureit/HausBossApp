@@ -17,3 +17,5 @@ export { Tabs } from './Tabs';
 export { ToastHost } from './Toast';
 export { DateTimeField } from './DateTimeField';
 export { Toggle } from './Toggle';
+export { GradientBackdrop, HeroHeader, HeroIconButton, HeroPill, HeroStat, HERO_TEXT_MUTED, SectionHeader, useLightStatusBar } from './Hero';
+export { IconTile, InfoRow, SectionCard, StatTile, Timeline } from './Sections';

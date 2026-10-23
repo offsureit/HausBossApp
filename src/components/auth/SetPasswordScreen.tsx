@@ -3,7 +3,7 @@ import { Keyboard, StyleSheet, View, type TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { AlertCircle, CheckCircle2, KeyRound, Lock } from 'lucide-react-native';
 import Animated from 'react-native-reanimated';
-import { Button, Screen, ScreenHeader, Text, TextField } from '~/components/ui';
+import { Button, HeroHeader, Screen, Text, TextField } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { haptics } from '~/lib/haptics';
 import { useMotion } from '~/motion';
@@ -63,8 +63,8 @@ export function SetPasswordScreen({ token, type }: SetPasswordScreenProps) {
   const canSubmit = password.length >= 8 && confirm.length > 0 && !busy;
 
   return (
-    <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
-      <ScreenHeader title={invite ? 'Join your team' : 'Choose a new password'} subtitle={state.kind === 'ready' && state.email ? state.email : undefined} large={false} />
+    <Screen scroll hero edges={['left', 'right', 'bottom']}>
+      <HeroHeader eyebrow="HausBoss" title={invite ? 'Join your team' : 'Choose a new password'} subtitle={state.kind === 'ready' && state.email ? state.email : undefined} />
       {state.kind === 'checking' ? (
         <Text variant="small" color="mutedForeground">Checking your link…</Text>
       ) : state.kind === 'invalid' ? (

@@ -100,7 +100,7 @@ export function Sheet({ open, onClose, title, description, children, maxHeight =
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   kav: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingHorizontal: spacing[4], shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
+  sheet: { borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, paddingHorizontal: spacing[4], shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
   handleArea: { alignItems: 'stretch', paddingTop: spacing[2], paddingBottom: spacing[2] },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: spacing[2] },
   title: { marginTop: spacing[1] },

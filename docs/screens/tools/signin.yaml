@@ -1,0 +1,25 @@
+# Sign in for the screenshot capture (no hideKeyboard: on Android it presses Back and can close the app).
+appId: app.hausboss.mobile
+---
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: "login-email"
+    timeout: 60000
+- tapOn:
+    id: "login-email"
+- eraseText: 60
+- inputText: ${EMAIL}
+- pressKey: Enter
+- inputText: ${PASSWORD}
+- pressKey: Enter
+- extendedWaitUntil:
+    notVisible:
+      id: "login-email"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"

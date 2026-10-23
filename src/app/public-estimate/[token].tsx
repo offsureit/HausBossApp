@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Building2, CheckCircle2, FileText, Mail, Phone, XCircle } from 'lucide-react-native';
+import { Building2, CheckCircle2, FileText, Mail, MapPin, Package, Phone, UserRound, Wrench, XCircle } from 'lucide-react-native';
 import { formatMoney } from '@/utils/estimateMath';
 import type { EstimateLineItem } from '@/types';
-import { Button, Card, Dialog, EmptyState, Screen, ScreenHeader, Skeleton, Text } from '~/components/ui';
+import { Button, Card, Dialog, EmptyState, GradientBackdrop, HERO_TEXT_MUTED, InfoRow, Screen, SectionCard, Skeleton, Text } from '~/components/ui';
 import { toast } from '~/features/toast/store';
 import { haptics } from '~/lib/haptics';
 import { links } from '~/lib/links';
 import { ESTIMATE_STATUS_LABELS, estimatesService, type PublicEstimate } from '~/services/estimates';
 import { useTheme } from '~/theme/ThemeProvider';
-import { spacing } from '~/theme/tokens';
+import { radius, spacing } from '~/theme/tokens';
 
 /**
  * Customer-facing estimate (`hausboss.app/estimate/:token`, web `PublicEstimate`): the company
@@ -52,7 +52,7 @@ export default function PublicEstimateScreen() {
   const money = (n: number | string | null | undefined) => formatMoney(Number(n ?? 0));
 
   return (
-    <Screen scroll edges={['left', 'right', 'bottom']}>
+    <Screen scroll edges={['left', 'right', 'bottom']} contentContainerStyle={styles.page}>
       <Stack.Screen options={{ headerShown: true, title: 'Estimate' }} />
       {loading ? (
         <View style={styles.stack}><Skeleton height={28} width="60%" /><Skeleton height={16} width="40%" /><Skeleton height={160} /></View>
@@ -60,26 +60,35 @@ export default function PublicEstimateScreen() {
         <EmptyState icon={FileText} title="Estimate unavailable" message={error ?? 'This estimate is no longer available.'} action={<Button label="Try again" variant="outline" onPress={() => void load()} />} />
       ) : (
         <>
-          <ScreenHeader title={estimate.title} subtitle={`${estimate.estimate_number} · ${ESTIMATE_STATUS_LABELS[estimate.status] ?? estimate.status}`} large={false} />
+          {/* Summary card: the brand gradient with the title, number, status and total. */}
+          <View style={styles.heroCard}>
+            <GradientBackdrop rounded={radius.xxl} />
+            <View style={styles.row}>
+              <Text variant="mono" color={HERO_TEXT_MUTED} style={styles.lineText}>{estimate.estimate_number}</Text>
+              <View style={styles.heroChip}><Text variant="caption" color="#ffffff" style={styles.strong}>{ESTIMATE_STATUS_LABELS[estimate.status] ?? estimate.status}</Text></View>
+            </View>
+            <Text variant="title" color="#ffffff">{estimate.title}</Text>
+            {estimate.company?.name ? <Text variant="small" color={HERO_TEXT_MUTED}>From {estimate.company.name}</Text> : null}
+            <Text variant="caption" color={HERO_TEXT_MUTED} style={styles.heroLabel}>Total</Text>
+            <Text style={styles.heroAmount} color="#ffffff">{money(estimate.total)}</Text>
+          </View>
           {estimate.company ? (
-            <Card style={styles.stack}>
-              <View style={styles.row}><Building2 size={16} color={colors.mutedForeground} /><Text variant="bodyMedium">{estimate.company.name ?? 'Your contractor'}</Text></View>
-              {estimate.company.phone ? <Text variant="small" color="accent" onPress={() => void links.call(estimate.company?.phone ?? '')}><Phone size={12} color={colors.accent} /> {estimate.company.phone}</Text> : null}
-              {estimate.company.email ? <Text variant="small" color="accent" onPress={() => void links.email(estimate.company?.email ?? '')}><Mail size={12} color={colors.accent} /> {estimate.company.email}</Text> : null}
-              {estimate.company.address ? <Text variant="small" color="mutedForeground">{estimate.company.address}</Text> : null}
-            </Card>
+            <SectionCard title={estimate.company.name ?? 'Your contractor'} subtitle="Contractor" icon={Building2} flush>
+              {[
+                estimate.company.phone ? <InfoRow key="p" first icon={Phone} label="Phone" value={estimate.company.phone} onPress={() => void links.call(estimate.company?.phone ?? '')} /> : null,
+                estimate.company.email ? <InfoRow key="e" first={!estimate.company.phone} icon={Mail} label="Email" value={estimate.company.email} onPress={() => void links.email(estimate.company?.email ?? '')} /> : null,
+                estimate.company.address ? <InfoRow key="a" first={!estimate.company.phone && !estimate.company.email} icon={MapPin} label="Address" value={estimate.company.address} /> : null,
+              ]}
+            </SectionCard>
           ) : null}
           {estimate.client_name || estimate.client_address ? (
-            <Card style={styles.stack}>
-              <Text variant="overline" color="mutedForeground">Prepared for</Text>
-              {estimate.client_name ? <Text variant="bodyMedium">{estimate.client_name}</Text> : null}
+            <SectionCard title={estimate.client_name || 'Prepared for you'} subtitle="Prepared for" icon={UserRound} color={colors.success}>
               {estimate.client_address ? <Text variant="small" color="mutedForeground">{estimate.client_address}</Text> : null}
-            </Card>
+            </SectionCard>
           ) : null}
           {estimate.description ? <Text variant="body">{estimate.description}</Text> : null}
           {([['Parts', parts], ['Services', services]] as const).map(([title, rows]) => rows.length ? (
-            <Card key={title} style={styles.stack}>
-              <Text variant="label">{title}</Text>
+            <SectionCard key={title} title={title} icon={title === 'Parts' ? Package : Wrench} color={title === 'Parts' ? colors.accent : colors.success}>
               {rows.map((i: EstimateLineItem) => (
                 <View key={i.id} style={styles.line}>
                   <View style={styles.lineText}>
@@ -89,7 +98,7 @@ export default function PublicEstimateScreen() {
                   <Text variant="bodyMedium">{money(Number(i.quantity) * Number(i.unit_price))}</Text>
                 </View>
               ))}
-            </Card>
+            </SectionCard>
           ) : null)}
           {estimate.line_items.length === 0 ? <Text variant="small" color="mutedForeground">No line items.</Text> : null}
           <Card style={styles.stack}>
@@ -97,13 +106,13 @@ export default function PublicEstimateScreen() {
             <Total label="Services" value={money(estimate.subtotal_services)} />
             {Number(estimate.discount_amount) > 0 ? <Total label="Discount" value={`−${money(estimate.discount_amount)}`} /> : null}
             {Number(estimate.tax_rate) > 0 ? <Total label={`Tax (${Number(estimate.tax_rate)}%)`} value={money(estimate.tax_amount)} /> : null}
-            <View style={[styles.line, styles.grand, { borderTopColor: colors.border }]}><Text variant="heading">Total</Text><Text variant="heading">{money(estimate.total)}</Text></View>
+            <View style={[styles.line, styles.grand, { borderTopColor: colors.border }]}><Text variant="heading">Total</Text><Text variant="title" color="accent">{money(estimate.total)}</Text></View>
           </Card>
           {estimate.notes ? <Text variant="small" color="mutedForeground">{estimate.notes}</Text> : null}
           {estimate.status === 'sent' ? (
             <View style={styles.stack}>
               <Button label="Accept estimate" size="lg" fullWidth icon={<CheckCircle2 size={20} color={colors.accentForeground} />} onPress={() => setConfirm('accept')} />
-              <Button label="Decline" variant="outline" fullWidth icon={<XCircle size={18} color={colors.foreground} />} onPress={() => setConfirm('decline')} />
+              <Button label="Decline" variant="outline" size="lg" fullWidth icon={<XCircle size={18} color={colors.foreground} />} onPress={() => setConfirm('decline')} />
             </View>
           ) : (
             <View style={[styles.row, styles.answer]}>
@@ -133,9 +142,15 @@ function Total({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   stack: { gap: spacing[2] },
+  page: { gap: spacing[3] },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing[3] },
   lineText: { flex: 1, minWidth: 0 },
   grand: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing[2], marginTop: spacing[1] },
   answer: { paddingVertical: spacing[2] },
+  heroCard: { borderRadius: radius.xxl, padding: spacing[5], gap: spacing[1], overflow: 'hidden' },
+  heroChip: { borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: spacing[2], paddingVertical: 2 },
+  heroLabel: { marginTop: spacing[3] },
+  heroAmount: { fontFamily: 'Inter_700Bold', fontSize: 34, lineHeight: 40, letterSpacing: -0.8 },
+  strong: { fontFamily: 'Inter_600SemiBold' },
 });

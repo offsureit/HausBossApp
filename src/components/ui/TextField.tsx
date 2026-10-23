@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'rea
 import { Eye, EyeOff } from 'lucide-react-native';
 import { Text } from './Text';
 import { useTheme } from '~/theme/ThemeProvider';
-import { fontFamily, radius, spacing, touchTarget } from '~/theme/tokens';
+import { fieldSurface, fontFamily, radius, spacing, touchTarget } from '~/theme/tokens';
 
 export interface TextFieldProps extends TextInputProps {
   label: string;
@@ -16,15 +16,14 @@ export interface TextFieldProps extends TextInputProps {
 }
 
 export function TextField({ label, error, hint, leading, secure = false, style, editable = true, ref, ...rest }: TextFieldProps) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(secure);
-  const borderColor = error ? colors.destructive : focused ? colors.ring : colors.input;
 
   return (
     <View style={styles.wrap}>
-      <Text variant="label" color="foreground">{label}</Text>
-      <View style={[styles.box, { borderColor, backgroundColor: colors.card, borderWidth: focused || error ? 2 : StyleSheet.hairlineWidth * 2 }, !editable && { opacity: 0.6 }]}>
+      <Text variant="label" color={focused ? 'accent' : 'foreground'} style={styles.label}>{label}</Text>
+      <View style={[styles.box, fieldSurface(colors, scheme, { focused, error: !!error }), !editable && { opacity: 0.6 }]}>
         {leading ? <View style={styles.leading}>{leading}</View> : null}
         <TextInput
           ref={ref}
@@ -50,8 +49,9 @@ export function TextField({ label, error, hint, leading, secure = false, style, 
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing[1] },
-  box: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, minHeight: touchTarget + 4, paddingHorizontal: spacing[3] },
+  wrap: { gap: 6 },
+  label: { fontFamily: fontFamily.semibold, fontSize: 13, lineHeight: 18 },
+  box: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg - 4, minHeight: touchTarget + 8, paddingHorizontal: spacing[4] },
   leading: { marginRight: spacing[2] },
   input: { flex: 1, fontFamily: fontFamily.regular, fontSize: 16, paddingVertical: spacing[3], minHeight: touchTarget },
   toggle: { padding: spacing[1] },

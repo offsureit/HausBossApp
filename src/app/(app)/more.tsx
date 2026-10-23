@@ -1,22 +1,17 @@
-import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
 import { Alert, StyleSheet, View } from 'react-native';
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { Bell, Boxes, CreditCard, Inbox, LogOut, Moon, Package, Search, ShieldCheck, Smartphone, Sun, Tags, UserRound, Users } from 'lucide-react-native';
 import { EMPLOYEE_ROLE_LABEL } from '@/utils/employees';
 import { fullName } from '@/utils/names';
 import { primaryRole } from '@/services/adapters/employeeAdapter';
-import { isConnected, onConnectionChange } from '~/api/realtime';
 import { SettingsRow } from '~/components/settings/SettingsRow';
-import { Avatar, Button, Card, PressableScale, Screen, ScreenHeader, Text } from '~/components/ui';
+import { Avatar, Button, Card, HERO_TEXT_MUTED, HeroHeader, PressableScale, Screen, SectionHeader, Text } from '~/components/ui';
 import { useAuth } from '~/features/auth/AuthProvider';
 import { useCompany } from '~/features/company/CompanyProvider';
 import { useNotifications } from '~/features/notifications/NotificationsProvider';
 import { type ThemeMode } from '~/features/settings/store';
-import { API_URL } from '~/lib/env';
 import { useTheme } from '~/theme/ThemeProvider';
-import { radius, spacing } from '~/theme/tokens';
+import { elevation, radius, spacing } from '~/theme/tokens';
 
 const MODES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
   { id: 'system', label: 'System', icon: Smartphone },
@@ -30,9 +25,7 @@ export default function MoreScreen() {
   const router = useRouter();
   const { company } = useCompany();
   const { unreadCount } = useNotifications();
-  const { colors, mode, setMode } = useTheme();
-  const [live, setLive] = useState(isConnected());
-  useEffect(() => onConnectionChange(setLive), []);
+  const { colors, scheme, mode, setMode } = useTheme();
 
   const name = fullName({ firstName: auth.profile?.first_name, lastName: auth.profile?.last_name }) || auth.user?.email || '';
   const role = auth.roles.length ? EMPLOYEE_ROLE_LABEL[primaryRole(auth.roles)] : '';
@@ -46,17 +39,17 @@ export default function MoreScreen() {
   };
 
   return (
-    <Screen scroll>
-      <ScreenHeader title="More" />
-
-      <Card style={styles.account}>
-        <Avatar name={name} firstName={auth.profile?.first_name} lastName={auth.profile?.last_name} color={auth.profile?.color} size={52} />
-        <View style={styles.accountText}>
-          <Text variant="heading">{name}</Text>
-          <Text variant="small" color="mutedForeground">{auth.user?.email}</Text>
-          <Text variant="caption" color="mutedForeground">{[role, company?.name].filter(Boolean).join(' · ')}</Text>
+    <Screen scroll hero>
+      <HeroHeader title="More" eyebrow={company?.name}>
+        <View style={styles.account}>
+          <View style={styles.avatarRing}><Avatar name={name} firstName={auth.profile?.first_name} lastName={auth.profile?.last_name} color={auth.profile?.color} size={56} /></View>
+          <View style={styles.accountText}>
+            <Text variant="heading" color="#ffffff">{name}</Text>
+            <Text variant="small" color={HERO_TEXT_MUTED}>{auth.user?.email}</Text>
+            {role ? <View style={styles.rolePill}><Text variant="caption" color="#ffffff" style={styles.roleText}>{role}</Text></View> : null}
+          </View>
         </View>
-      </Card>
+      </HeroHeader>
 
       <View style={styles.section}>
         <Card padded={false}>
@@ -70,7 +63,7 @@ export default function MoreScreen() {
 
       {staff ? (
         <View style={styles.section}>
-          <Text variant="overline" color="mutedForeground">Company</Text>
+          <SectionHeader title="Company" />
           <Card padded={false}>
             <SettingsRow first icon={Package} label="Products & services" description="Price book for estimates" onPress={() => router.push('/settings/products')} />
             <SettingsRow icon={Boxes} label="Truck stock" description="Parts carried per technician" onPress={() => router.push('/settings/inventory')} />
@@ -89,12 +82,12 @@ export default function MoreScreen() {
       )}
 
       <View style={styles.section}>
-        <Text variant="overline" color="mutedForeground">Appearance</Text>
+        <SectionHeader title="Appearance" />
         <View style={[styles.segment, { backgroundColor: colors.muted }]} accessibilityRole="radiogroup">
           {MODES.map(({ id, label, icon: Icon }) => {
             const active = mode === id;
             return (
-              <PressableScale key={id} accessibilityRole="radio" accessibilityState={{ selected: active }} accessibilityLabel={label} onPress={() => setMode(id)} style={[styles.segmentItem, active && { backgroundColor: colors.card }]}>
+              <PressableScale key={id} accessibilityRole="radio" accessibilityState={{ selected: active }} accessibilityLabel={label} onPress={() => setMode(id)} style={[styles.segmentItem, active && [{ backgroundColor: colors.card }, elevation(1, scheme)]]}>
                 <Icon size={16} color={active ? colors.accent : colors.mutedForeground} />
                 <Text variant="label" color={active ? 'foreground' : 'mutedForeground'}>{label}</Text>
               </PressableScale>
@@ -103,37 +96,18 @@ export default function MoreScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text variant="overline" color="mutedForeground">Connection</Text>
-        <Card>
-          <Row label="Server" value={API_URL} />
-          <Row label="Realtime" value={live ? 'Connected' : 'Not connected'} valueColor={live ? 'success' : 'mutedForeground'} />
-          <Row label="Access token" value={auth.session?.expires_at ? `renews ${format(new Date((auth.session.expires_at - 60) * 1000), 'h:mm a')}` : '—'} />
-          <Row label="App version" value={`${Constants.expoConfig?.version ?? '—'} (${Constants.expoConfig?.android?.versionCode ?? Constants.expoConfig?.ios?.buildNumber ?? 'dev'})`} last />
-        </Card>
-      </View>
-
-      <Button label="Sign out" variant="destructive" icon={<LogOut size={18} color={colors.destructiveForeground} />} fullWidth onPress={confirmSignOut} />
+      <Button label="Sign out" variant="danger-ghost" size="lg" icon={<LogOut size={18} color={colors.destructive} />} fullWidth onPress={confirmSignOut} />
     </Screen>
-  );
-}
-
-function Row({ label, value, valueColor = 'foreground', last = false }: { label: string; value: string; valueColor?: 'foreground' | 'success' | 'mutedForeground'; last?: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.row, !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-      <Text variant="small" color="mutedForeground">{label}</Text>
-      <Text variant="small" color={valueColor} style={styles.rowValue}>{value}</Text>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   account: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  avatarRing: { padding: 3, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.22)' },
   accountText: { flex: 1, minWidth: 0, gap: 2 },
-  section: { gap: spacing[2] },
-  segment: { flexDirection: 'row', padding: spacing[1], borderRadius: radius.md, gap: spacing[1] },
-  segmentItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[1], paddingVertical: spacing[2], borderRadius: radius.sm, minHeight: 44 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3], paddingVertical: spacing[3] },
-  rowValue: { flex: 1, textAlign: 'right' },
+  rolePill: { alignSelf: 'flex-start', marginTop: 4, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.full, paddingHorizontal: spacing[2], paddingVertical: 2 },
+  roleText: { fontFamily: 'Inter_600SemiBold' },
+  section: { gap: spacing[3] },
+  segment: { flexDirection: 'row', padding: spacing[1], borderRadius: radius.full, gap: spacing[1] },
+  segmentItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[1], paddingVertical: spacing[2], borderRadius: radius.full, minHeight: 44 },
 });

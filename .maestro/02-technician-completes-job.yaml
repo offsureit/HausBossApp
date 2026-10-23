@@ -7,10 +7,19 @@ env:
   PASSWORD: ${TECH_PASSWORD}
 ---
 - runFlow: shared/login.yaml
+# The tab opens on a tall gradient header: wait for the screen, then scroll the target into view.
 - extendedWaitUntil:
     visible:
-      text: "Maestro Fixture"
+      text: "Next up"
     timeout: 60000
+- scrollUntilVisible:
+    element:
+      text: "Maestro Fixture"
+    direction: DOWN
+    centerElement: true
+    timeout: 30000
+# Work from the job hub so every action targets exactly this job (Today lists other jobs too).
+- tapOn: "Maestro Fixture"
 - extendedWaitUntil:
     visible:
       text: "Pending"
@@ -36,11 +45,25 @@ env:
     visible:
       text: "At Job Site"
     timeout: 30000
-- extendedWaitUntil:
-    visible:
-      text: "Sharing location|Location while open"
+# Location sharing shows in Today's gradient header: check it, then return to the job.
+- back
+- scrollUntilVisible:
+    element:
+      text: "Sharing location|Location only while open.*"
+    direction: UP
     timeout: 15000
 - takeScreenshot: maestro-02-en-route
+- scrollUntilVisible:
+    element:
+      text: "Maestro Fixture"
+    direction: DOWN
+    centerElement: true
+    timeout: 15000
+- tapOn: "Maestro Fixture"
+- extendedWaitUntil:
+    visible:
+      text: "At Job Site"
+    timeout: 15000
 - tapOn: "At Job Site"
 - extendedWaitUntil:
     visible:
@@ -51,6 +74,8 @@ env:
     visible:
       text: "Pre-Job photo"
     timeout: 30000
+# Let the sheet finish sliding up so the tap does not land on Cancel below Skip.
+- waitForAnimationToEnd
 - tapOn: "Skip"
 - extendedWaitUntil:
     visible:
@@ -66,6 +91,8 @@ env:
     visible:
       text: "Post-Job photo"
     timeout: 30000
+# Let the sheet finish sliding up so the tap does not land on Cancel below Skip.
+- waitForAnimationToEnd
 - tapOn: "Skip"
 - extendedWaitUntil:
     visible:
@@ -74,11 +101,18 @@ env:
 - tapOn:
     id: "notes-input"
 - inputText: "Replaced the thermostat, tested heating."
-- hideKeyboard
+# No hideKeyboard: on Android it presses Back, which closes the sheet. The button sits above the keyboard.
 - tapOn: "Complete job"
-# Confetti, then the job moves to the Completed section of Today.
 - extendedWaitUntil:
     visible:
+      text: "Completed"
+    timeout: 20000
+# Confetti, then the job moves to the Completed section of Today.
+- back
+- scrollUntilVisible:
+    element:
       text: "Open job for Maestro Fixture, completed"
+    direction: DOWN
+    centerElement: true
     timeout: 20000
 - takeScreenshot: maestro-02-completed
